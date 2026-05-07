@@ -3,13 +3,12 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Rust-1.75+-orange.svg" alt="Rust">
   <img src="https://img.shields.io/badge/Vue-3.4-green.svg" alt="Vue">
+  <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20Windows-blue.svg" alt="Platform">
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
   <img src="https://img.shields.io/github/stars/2233qazwsx0/linux-sys-monitor?style=social" alt="Stars">
 </p>
 
-A beautiful, real-time Linux system monitoring dashboard with live WebSocket streaming. Monitor CPU, memory, disk I/O, network traffic, and running processes - all in a sleek dark-themed interface.
-
-![Dashboard Preview](https://raw.githubusercontent.com/2233qazwsx0/linux-sys-monitor/main/preview.png)
+A beautiful, real-time system monitoring dashboard for both Linux and Windows. Monitor CPU, memory, disk I/O, network traffic, and running processes - all in a sleek dark-themed interface.
 
 ## ✨ Features
 
@@ -22,105 +21,57 @@ A beautiful, real-time Linux system monitoring dashboard with live WebSocket str
 - 🎨 **Beautiful Dark Theme** - Modern, responsive UI
 - 📱 **Mobile Friendly** - Works on all screen sizes
 - 🐳 **Docker Support** - One-click container deployment
+- 🪟 **Windows Support** - Native Windows installer available
 
 ## 🚀 Quick Start
 
-### One-Line Install
+### Linux
 
 ```bash
+# One-line install
 curl -sSL https://raw.githubusercontent.com/2233qazwsx0/linux-sys-monitor/main/setup.sh | bash
-```
 
-### Manual Installation
-
-```bash
-# Clone the repository
+# Or clone and install
 git clone https://github.com/2233qazwsx0/linux-sys-monitor.git
-cd linux-sys-monitor
-
-# Run installation script
+cd linux-system-monitor
 chmod +x setup.sh
 ./setup.sh
-
-# Start the monitor
 ./target/release/linux-system-monitor
 ```
 
-### Docker Deployment
+### Windows
+
+#### Option 1: PowerShell Installer (Recommended)
+
+Run in PowerShell as Administrator:
+
+```powershell
+irm https://raw.githubusercontent.com/2233qazwsx0/linux-sys-monitor/main/install-windows.ps1 | iex
+```
+
+#### Option 2: Manual Installation
+
+1. Download the latest release from [GitHub Releases](https://github.com/2233qazwsx0/linux-sys-monitor/releases)
+2. Extract the ZIP file
+3. Run `start.bat` or the executable directly
+4. Open http://localhost:8080
+
+### Docker
 
 ```bash
-# Using docker-compose (recommended)
 docker-compose up -d
-
-# Or build and run manually
-docker build -t linux-system-monitor .
-docker run -d -p 8080:8080 --privileged --pid=host linux-system-monitor
 ```
 
 Open [http://localhost:8080](http://localhost:8080) in your browser.
-
-## 🔧 API Reference
-
-### WebSocket Endpoint
-
-Connect to `ws://localhost:8080/ws` to receive real-time metrics.
-
-**Message Format:**
-```json
-{
-  "timestamp": 1700000000,
-  "uptime": 86400,
-  "cpu": {
-    "usage": 25.5,
-    "core_count": 8,
-    "per_core": [20.0, 30.0, 25.0, 28.0, 22.0, 18.0, 35.0, 20.0]
-  },
-  "memory": {
-    "total": 16777216,
-    "used": 8388608,
-    "available": 8388608,
-    "usage_percent": 50.0
-  },
-  "disk": {
-    "read_bytes": 1000000,
-    "write_bytes": 500000,
-    "read_rate": 1024,
-    "write_rate": 512
-  },
-  "network": {
-    "rx_bytes": 5000000,
-    "tx_bytes": 2000000,
-    "rx_rate": 10240,
-    "tx_rate": 5120
-  },
-  "processes": [
-    {
-      "pid": 1234,
-      "name": "chrome",
-      "cpu": 15.5,
-      "memory": 8.2
-    }
-  ]
-}
-```
-
-### REST Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health` | GET | Health check, returns "OK" |
-| `/api/history` | GET | Historical data endpoint |
-| `/` | GET | Web dashboard |
-| `/ws` | WebSocket | Real-time metrics stream |
 
 ## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                      Browser                            │
-│  ┌─────────────────────────────────────────────────┐    │
-│  │              Vue.js + ECharts UI                 │    │
-│  └─────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────┐  │
+│  │              Vue.js + ECharts UI                  │  │
+│  └─────────────────────────────────────────────────┘  │
 │                         ▲                               │
 │                         │ WebSocket                     │
 └─────────────────────────┼───────────────────────────────┘
@@ -131,13 +82,14 @@ Connect to `ws://localhost:8080/ws` to receive real-time metrics.
 │  │   Axum HTTP │  │   WebSocket  │  │   Metrics     │   │
 │  │   Server    │  │   Handler    │  │   Collector   │   │
 │  └──────────────┘  └──────────────┘  └──────────────┘   │
-│                                              │          │
-└──────────────────────────────────────────────┼──────────┘
-                                               │
-                          ┌────────────────────┴───────────┐
-                          │        Linux Kernel            │
-                          │   sysinfo crate /proc         │
-                          └───────────────────────────────┘
+└─────────────────────────────────────────────────────────┘
+                          │
+          ┌───────────────┴───────────────┐
+          ▼                               ▼
+   ┌─────────────┐                ┌─────────────┐
+   │    Linux    │                │   Windows   │
+   │   /proc     │                │   PDH API   │
+   └─────────────┘                └─────────────┘
 ```
 
 ## 🛠️ Tech Stack
@@ -149,29 +101,22 @@ Connect to `ws://localhost:8080/ws` to receive real-time metrics.
 
 ## 📦 Requirements
 
-- Linux system (uses /proc filesystem)
-- Rust 1.75+ (for building from source)
-- Node.js 18+ (for frontend build, optional with pre-built binary)
+- **Linux:** Uses /proc filesystem
+- **Windows:** Windows 10/11, PowerShell 5.0+
+- **Build:** Rust 1.75+ (for building from source)
+- **Frontend Build:** Node.js 18+ (optional with pre-built binary)
 
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ## ⭐ Show your support
 
 Give a ⭐ if this project helped you!
-
-[![Star History Chart](https://api.star-history.com/svg?repos=2233qazwsx0/linux-sys-monitor&type=Timeline)](https://star-history.com/#2233qazwsx0/linux-sys-monitor&Timeline)
 
 ---
 

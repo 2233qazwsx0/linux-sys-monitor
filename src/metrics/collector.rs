@@ -9,7 +9,8 @@ pub struct SystemMetrics {
     pub memory: MemoryMetrics,
     pub disk: DiskMetrics,
     pub network: NetworkMetrics,
-    pub processes: Vec<ProcessInfo>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub processes: Option<Vec<ProcessInfo>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -185,8 +186,12 @@ impl MetricsCollector {
         }
     }
 
-    fn collect_processes(&self) -> Vec<ProcessInfo> {
+    fn collect_processes(&self) -> Option<Vec<ProcessInfo>> {
         let total_memory = self.system.total_memory() as f32;
+        
+        if total_memory == 0.0 {
+            return None;
+        }
         
         let mut processes: Vec<ProcessInfo> = self.system.processes()
             .values()
@@ -196,7 +201,7 @@ impl MetricsCollector {
                     pid: p.pid().as_u32(),
                     name: p.name().to_string(),
                     cpu: p.cpu_usage(),
-                    memory: if total_memory > 0.0 { (memory / total_memory) * 100.0 } else { 0.0 },
+                    memory: (memory / total_memory) * 100.0,
                 }
             })
             .filter(|p| p.cpu > 0.1 || p.memory > 0.1)
@@ -212,6 +217,6 @@ impl MetricsCollector {
         });
         
         processes.truncate(20);
-        processes
+        Some(processes)
     }
 }
