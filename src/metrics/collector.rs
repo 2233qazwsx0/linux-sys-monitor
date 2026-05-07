@@ -56,7 +56,7 @@ impl MetricsCollector {
     }
 
     pub fn collect(&mut self) -> SystemMetrics {
-        self.system.refresh_cpu_all();
+        self.system.refresh_cpu_specifics(CpuRefreshKind::everything());
         self.system.refresh_memory();
         self.disks.refresh();
         

@@ -1,6 +1,7 @@
 use axum::extract::ws::{WebSocket, Message};
 use tokio::sync::broadcast;
 use std::sync::Arc;
+use futures_util::{StreamExt, SinkExt};
 
 pub async fn handle_socket(
     socket: WebSocket,
@@ -22,8 +23,8 @@ pub async fn handle_socket(
                     Err(_) => return,
                 }
             }
-            msg = ws_receiver.recv() => {
-                if msg.is_err() {
+            msg = ws_receiver.next() => {
+                if msg.is_none() {
                     return;
                 }
             }

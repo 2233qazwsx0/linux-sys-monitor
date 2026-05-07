@@ -2,8 +2,8 @@ use std::net::SocketAddr;
 use axum::{Router, routing::get};
 use tower_http::cors::{CorsLayer, Any};
 use tracing_subscriber;
-use std::sync::Arc;
 use tokio::sync::broadcast;
+use std::sync::Arc;
 
 mod metrics;
 mod api;
@@ -13,6 +13,7 @@ async fn main() {
     tracing_subscriber::fmt::init();
     
     let (tx, _rx) = broadcast::channel::<metrics::SystemMetrics>(100);
+    let tx = Arc::new(tx);
     let tx_clone = tx.clone();
     
     tokio::spawn(async move {
@@ -20,8 +21,8 @@ async fn main() {
         let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
         loop {
             interval.tick().await;
-            let metrics = collector.collect();
-            let _ = tx_clone.send(metrics);
+            let metrics_data = collector.collect();
+            let _ = tx_clone.send(metrics_data);
         }
     });
     

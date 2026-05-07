@@ -1,10 +1,9 @@
 pub mod http;
 
 use axum::{
-    extract::ws::{WebSocket, Message, WebSocketUpgrade},
+    extract::ws::WebSocketUpgrade,
     extract::State,
     response::Html,
-    TypedHeader,
 };
 use tokio::sync::broadcast;
 use std::sync::Arc;
