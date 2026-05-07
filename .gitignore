@@ -1,0 +1,9 @@
+/target
+/node_modules
+/dist
+frontend/node_modules
+src/frontend_dist
+.env
+*.log
+.DS_Store
+Cargo.lock
