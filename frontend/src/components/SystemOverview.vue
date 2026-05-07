@@ -3,22 +3,22 @@
     <div class="stat-card cpu">
       <div class="stat-header">
         <span class="stat-icon">⚡</span>
-        <span class="stat-title">CPU</span>
+        <span class="stat-title">{{ lang === 'zh' ? 'CPU' : 'CPU' }}</span>
       </div>
       <div class="stat-value">{{ metrics.cpu.usage.toFixed(1) }}%</div>
       <div class="stat-bar">
         <div class="stat-bar-fill" :style="{ width: metrics.cpu.usage + '%' }"></div>
       </div>
       <div class="stat-footer">
-        <span>{{ metrics.cpu.core_count }} Cores</span>
-        <span>{{ formatLoad(metrics.cpu.per_core) }}</span>
+        <span>{{ metrics.cpu.core_count }} {{ lang === 'zh' ? '核心' : 'Cores' }}</span>
+        <span>{{ formatLoad(metrics.cpu.per_core) }} {{ lang === 'zh' ? '平均' : 'avg' }}</span>
       </div>
     </div>
 
     <div class="stat-card memory">
       <div class="stat-header">
         <span class="stat-icon">🧠</span>
-        <span class="stat-title">Memory</span>
+        <span class="stat-title">{{ lang === 'zh' ? '内存' : 'Memory' }}</span>
       </div>
       <div class="stat-value">{{ metrics.memory.usage_percent.toFixed(1) }}%</div>
       <div class="stat-bar">
@@ -33,36 +33,40 @@
     <div class="stat-card disk">
       <div class="stat-header">
         <span class="stat-icon">💾</span>
-        <span class="stat-title">Disk I/O</span>
+        <span class="stat-title">{{ lang === 'zh' ? '磁盘 I/O' : 'Disk I/O' }}</span>
       </div>
       <div class="stat-value duo">
         <span>R: {{ formatBytes(metrics.disk.read_rate) }}/s</span>
         <span>W: {{ formatBytes(metrics.disk.write_rate) }}/s</span>
       </div>
       <div class="stat-footer">
-        <span>Read</span>
-        <span>Write</span>
+        <span>{{ lang === 'zh' ? '读取' : 'Read' }}</span>
+        <span>{{ lang === 'zh' ? '写入' : 'Write' }}</span>
       </div>
     </div>
 
     <div class="stat-card network" v-if="metrics.network">
       <div class="stat-header">
         <span class="stat-icon">🌐</span>
-        <span class="stat-title">Network</span>
+        <span class="stat-title">{{ lang === 'zh' ? '网络' : 'Network' }}</span>
       </div>
       <div class="stat-value duo">
         <span>↓ {{ formatBytes(metrics.network.rx_rate) }}/s</span>
         <span>↑ {{ formatBytes(metrics.network.tx_rate) }}/s</span>
       </div>
       <div class="stat-footer">
-        <span>Download</span>
-        <span>Upload</span>
+        <span>{{ lang === 'zh' ? '下载' : 'Download' }}</span>
+        <span>{{ lang === 'zh' ? '上传' : 'Upload' }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
+
+const lang = ref(window.i18n?.isZh ? 'zh' : 'en')
+
 defineProps({
   metrics: Object
 })
@@ -78,7 +82,7 @@ function formatBytes(bytes) {
 function formatLoad(perCore) {
   if (!perCore || perCore.length === 0) return '0%'
   const avg = perCore.reduce((a, b) => a + b, 0) / perCore.length
-  return avg.toFixed(0) + '% avg'
+  return avg.toFixed(0) + '%'
 }
 </script>
 

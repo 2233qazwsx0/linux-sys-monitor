@@ -1,13 +1,13 @@
 <template>
   <div class="process-list">
-    <h3>📋 Top Processes</h3>
+    <h3>📋 {{ lang === 'zh' ? '热门进程' : 'Top Processes' }}</h3>
     <table>
       <thead>
         <tr>
-          <th>PID</th>
-          <th>Name</th>
-          <th>CPU %</th>
-          <th>Memory %</th>
+          <th>{{ lang === 'zh' ? 'PID' : 'PID' }}</th>
+          <th>{{ lang === 'zh' ? '名称' : 'Name' }}</th>
+          <th>{{ lang === 'zh' ? 'CPU %' : 'CPU %' }}</th>
+          <th>{{ lang === 'zh' ? '内存 %' : 'Memory %' }}</th>
         </tr>
       </thead>
       <tbody>
@@ -23,6 +23,10 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
+
+const lang = ref(window.i18n?.isZh ? 'zh' : 'en')
+
 defineProps({
   processes: Array
 })

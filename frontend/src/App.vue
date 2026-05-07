@@ -4,17 +4,21 @@
       <div class="header-content">
         <div class="logo">
           <span class="logo-icon">📊</span>
-          <h1>System Monitor</h1>
+          <h1>{{ $t('title') }}</h1>
         </div>
         <div class="header-right">
           <div class="uptime" v-if="currentMetrics">
-            <span class="uptime-label">Uptime</span>
+            <span class="uptime-label">{{ $t('uptime') }}</span>
             <span class="uptime-value">{{ uptime }}</span>
           </div>
           <div class="status" :class="connected ? 'connected' : 'disconnected'">
             <span class="status-dot"></span>
-            <span>{{ connected ? 'Live' : 'Disconnected' }}</span>
+            <span>{{ connected ? $t('live') : $t('disconnected') }}</span>
           </div>
+          <select v-model="lang" @change="changeLang" class="lang-select">
+            <option value="en">EN</option>
+            <option value="zh">中文</option>
+          </select>
         </div>
       </div>
     </header>
@@ -42,6 +46,30 @@ import DiskChart from './components/DiskChart.vue'
 import NetworkChart from './components/NetworkChart.vue'
 import SystemOverview from './components/SystemOverview.vue'
 import ProcessList from './components/ProcessList.vue'
+
+const lang = ref(window.i18n.isZh ? 'zh' : 'en')
+
+function $t(key) {
+  const translations = {
+    'en': {
+      'title': 'System Monitor',
+      'live': 'Live',
+      'disconnected': 'Disconnected',
+      'uptime': 'Uptime',
+    },
+    'zh': {
+      'title': '系统监控',
+      'live': '实时',
+      'disconnected': '已断开',
+      'uptime': '运行时间',
+    }
+  }
+  return translations[lang.value][key] || key
+}
+
+function changeLang() {
+  document.documentElement.lang = lang.value
+}
 
 const connected = ref(false)
 const currentMetrics = ref(null)
@@ -164,7 +192,7 @@ onUnmounted(() => {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .uptime {
@@ -220,6 +248,21 @@ onUnmounted(() => {
 
 .disconnected .status-dot {
   background: var(--danger);
+}
+
+.lang-select {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.lang-select:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 @keyframes pulse {

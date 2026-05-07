@@ -1,4 +1,4 @@
-# 🐧 Linux System Monitor
+# 📊 System Monitor
 
 <p align="center">
   <img src="https://img.shields.io/badge/Rust-1.75+-orange.svg" alt="Rust">
@@ -6,71 +6,54 @@
   <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20Windows-blue.svg" alt="Platform">
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
   <img src="https://img.shields.io/github/stars/2233qazwsx0/linux-sys-monitor?style=social" alt="Stars">
+  <img src="https://img.shields.io/badge/Version-2.0.0-6366f1.svg" alt="Version">
 </p>
 
-A beautiful, real-time system monitoring dashboard for both Linux and Windows. Monitor CPU, memory, disk I/O, network traffic, and running processes - all in a sleek dark-themed interface.
+一款支持 **Linux** 和 **Windows** 的实时系统监控仪表板。监控 CPU、内存、磁盘 I/O、网络流量和进程 - 所有功能都在一个时尚的暗色主题界面中。
 
-## ✨ Features
+## ✨ 功能特性
 
-- 📊 **Real-time CPU Monitoring** - Overall usage and per-core statistics
-- 💾 **Memory Usage Tracking** - Used, available, and percentage with visual bar
-- 📈 **Disk I/O Monitoring** - Read/write rates in bytes per second
-- 🌐 **Network Traffic** - Download/upload speed tracking
-- 📋 **Process List** - Top 10 processes by CPU usage
-- 🔄 **WebSocket Streaming** - Live updates every second
-- 🎨 **Beautiful Dark Theme** - Modern, responsive UI
-- 📱 **Mobile Friendly** - Works on all screen sizes
-- 🐳 **Docker Support** - One-click container deployment
-- 🪟 **Windows Support** - Native Windows installer available
+- 📊 **实时 CPU 监控** - 总体使用率和每核心统计
+- 💾 **内存使用追踪** - 已用/可用/百分比，带可视化条
+- 📈 **磁盘 I/O 监控** - 读写速率（字节/秒）
+- 🌐 **网络流量** - 下载/上传速度追踪
+- 📋 **进程列表** - 按 CPU 使用率排序的 Top 进程
+- 🔄 **WebSocket 实时推送** - 每秒更新
+- 🎨 **精美暗色主题** - 现代响应式界面
+- 🌍 **中英文支持** - 自动检测浏览器语言
+- 📱 **移动端适配** - 响应式设计
+- 🐳 **Docker 支持** - 一键容器部署
+- 🪟 **Windows 支持** - 原生 Windows 安装器
 
-## 🚀 Quick Start
+## 🚀 快速开始
 
-### Linux
+### Linux 一键安装
 
 ```bash
-# One-line install
 curl -sSL https://raw.githubusercontent.com/2233qazwsx0/linux-sys-monitor/main/setup.sh | bash
-
-# Or clone and install
-git clone https://github.com/2233qazwsx0/linux-sys-monitor.git
-cd linux-system-monitor
-chmod +x setup.sh
-./setup.sh
-./target/release/linux-system-monitor
 ```
 
-### Windows
-
-#### Option 1: PowerShell Installer (Recommended)
-
-Run in PowerShell as Administrator:
+### Windows PowerShell 安装
 
 ```powershell
 irm https://raw.githubusercontent.com/2233qazwsx0/linux-sys-monitor/main/install-windows.ps1 | iex
 ```
 
-#### Option 2: Manual Installation
-
-1. Download the latest release from [GitHub Releases](https://github.com/2233qazwsx0/linux-sys-monitor/releases)
-2. Extract the ZIP file
-3. Run `start.bat` or the executable directly
-4. Open http://localhost:8080
-
-### Docker
+### Docker 部署
 
 ```bash
 docker-compose up -d
 ```
 
-Open [http://localhost:8080](http://localhost:8080) in your browser.
+然后打开 http://localhost:8080
 
-## 🏗️ Architecture
+## 🏗️ 技术架构
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                      Browser                            │
 │  ┌─────────────────────────────────────────────────┐  │
-│  │              Vue.js + ECharts UI                  │  │
+│  │           Vue.js + ECharts UI                    │  │
 │  └─────────────────────────────────────────────────┘  │
 │                         ▲                               │
 │                         │ WebSocket                     │
@@ -83,40 +66,18 @@ Open [http://localhost:8080](http://localhost:8080) in your browser.
 │  │   Server    │  │   Handler    │  │   Collector   │   │
 │  └──────────────┘  └──────────────┘  └──────────────┘   │
 └─────────────────────────────────────────────────────────┘
-                          │
-          ┌───────────────┴───────────────┐
-          ▼                               ▼
-   ┌─────────────┐                ┌─────────────┐
-   │    Linux    │                │   Windows   │
-   │   /proc     │                │   PDH API   │
-   └─────────────┘                └─────────────┘
 ```
 
-## 🛠️ Tech Stack
+## 🛠️ 技术栈
 
-- **Backend:** Rust, Axum, Tokio, sysinfo
-- **Frontend:** Vue 3, ECharts, Vite
-- **Real-time:** WebSocket
-- **Container:** Docker
+- **后端:** Rust, Axum, Tokio, sysinfo
+- **前端:** Vue 3, ECharts, Vite
+- **实时:** WebSocket
+- **容器:** Docker
 
-## 📦 Requirements
+## 📝 许可证
 
-- **Linux:** Uses /proc filesystem
-- **Windows:** Windows 10/11, PowerShell 5.0+
-- **Build:** Rust 1.75+ (for building from source)
-- **Frontend Build:** Node.js 18+ (optional with pre-built binary)
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📝 License
-
-This project is licensed under the MIT License.
-
-## ⭐ Show your support
-
-Give a ⭐ if this project helped you!
+MIT License
 
 ---
 
