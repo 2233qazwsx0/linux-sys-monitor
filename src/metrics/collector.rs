@@ -1,12 +1,15 @@
 use serde::{Deserialize, Serialize};
-use sysinfo::{System, Disks, CpuRefreshKind, MemoryRefreshKind, RefreshKind};
+use sysinfo::{System, Disks, CpuRefreshKind, MemoryRefreshKind, RefreshKind, Networks};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemMetrics {
     pub timestamp: i64,
+    pub uptime: i64,
     pub cpu: CpuMetrics,
     pub memory: MemoryMetrics,
     pub disk: DiskMetrics,
+    pub network: NetworkMetrics,
+    pub processes: Vec<ProcessInfo>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -32,11 +35,29 @@ pub struct DiskMetrics {
     pub write_rate: u64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NetworkMetrics {
+    pub rx_bytes: u64,
+    pub tx_bytes: u64,
+    pub rx_rate: u64,
+    pub tx_rate: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProcessInfo {
+    pub pid: u32,
+    pub name: String,
+    pub cpu: f32,
+    pub memory: f32,
+}
+
 pub struct MetricsCollector {
     system: System,
     disks: Disks,
+    networks: Networks,
     last_disk_stats: (u64, u64),
-    last_time: std::time::Instant,
+    last_network_stats: (u64, u64),
+    boot_time: i64,
 }
 
 impl MetricsCollector {
@@ -47,11 +68,16 @@ impl MetricsCollector {
                 .with_memory(MemoryRefreshKind::everything())
         );
         let disks = Disks::new_with_refreshed_list();
+        let networks = Networks::new_with_refreshed_list();
+        let boot_time = chrono::Utc::now().timestamp() - System::boot_time() as i64;
+        
         Self {
             system,
             disks,
+            networks,
             last_disk_stats: (0, 0),
-            last_time: std::time::Instant::now(),
+            last_network_stats: (0, 0),
+            boot_time,
         }
     }
 
@@ -59,14 +85,26 @@ impl MetricsCollector {
         self.system.refresh_cpu_specifics(CpuRefreshKind::everything());
         self.system.refresh_memory();
         self.disks.refresh();
+        self.networks.refresh();
         
         let timestamp = chrono::Utc::now().timestamp();
+        let uptime = timestamp - self.boot_time;
         
         let cpu = self.collect_cpu();
         let memory = self.collect_memory();
         let disk = self.collect_disk();
+        let network = self.collect_network();
+        let processes = self.collect_processes();
         
-        SystemMetrics { timestamp, cpu, memory, disk }
+        SystemMetrics {
+            timestamp,
+            uptime,
+            cpu,
+            memory,
+            disk,
+            network,
+            processes,
+        }
     }
 
     fn collect_cpu(&self) -> CpuMetrics {
@@ -112,12 +150,10 @@ impl MetricsCollector {
             total_write += disk.available_space();
         }
         
-        let elapsed = self.last_time.elapsed().as_secs_f64().max(1.0);
-        let read_rate = ((total_read.saturating_sub(self.last_disk_stats.0)) as f64 / elapsed) as u64;
-        let write_rate = ((total_write.saturating_sub(self.last_disk_stats.1)) as f64 / elapsed) as u64;
+        let read_rate = total_read.saturating_sub(self.last_disk_stats.0);
+        let write_rate = total_write.saturating_sub(self.last_disk_stats.1);
         
         self.last_disk_stats = (total_read, total_write);
-        self.last_time = std::time::Instant::now();
         
         DiskMetrics {
             read_bytes: total_read,
@@ -125,5 +161,57 @@ impl MetricsCollector {
             read_rate,
             write_rate,
         }
+    }
+
+    fn collect_network(&mut self) -> NetworkMetrics {
+        let mut total_rx: u64 = 0;
+        let mut total_tx: u64 = 0;
+        
+        for (_name, data) in self.networks.iter() {
+            total_rx += data.received();
+            total_tx += data.transmitted();
+        }
+        
+        let rx_rate = total_rx.saturating_sub(self.last_network_stats.0);
+        let tx_rate = total_tx.saturating_sub(self.last_network_stats.1);
+        
+        self.last_network_stats = (total_rx, total_tx);
+        
+        NetworkMetrics {
+            rx_bytes: total_rx,
+            tx_bytes: total_tx,
+            rx_rate,
+            tx_rate,
+        }
+    }
+
+    fn collect_processes(&self) -> Vec<ProcessInfo> {
+        let total_memory = self.system.total_memory() as f32;
+        
+        let mut processes: Vec<ProcessInfo> = self.system.processes()
+            .values()
+            .map(|p| {
+                let memory = p.memory() as f32;
+                ProcessInfo {
+                    pid: p.pid().as_u32(),
+                    name: p.name().to_string(),
+                    cpu: p.cpu_usage(),
+                    memory: if total_memory > 0.0 { (memory / total_memory) * 100.0 } else { 0.0 },
+                }
+            })
+            .filter(|p| p.cpu > 0.1 || p.memory > 0.1)
+            .collect();
+        
+        processes.sort_by(|a, b| {
+            let cpu_cmp = b.cpu.partial_cmp(&a.cpu).unwrap();
+            if cpu_cmp != std::cmp::Ordering::Equal {
+                cpu_cmp
+            } else {
+                b.memory.partial_cmp(&a.memory).unwrap()
+            }
+        });
+        
+        processes.truncate(20);
+        processes
     }
 }

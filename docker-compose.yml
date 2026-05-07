@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  monitor:
+    build: .
+    container_name: system-monitor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /proc:/mnt/proc:ro
+    environment:
+      - RUST_LOG=info
+    restart: unless-stopped
+    network_mode: host
+    pid: host
