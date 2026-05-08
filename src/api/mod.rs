@@ -8,7 +8,6 @@ use axum::{
 };
 use std::sync::{Arc, Mutex};
 use tokio::sync::broadcast;
-use serde::{Deserialize, Serialize};
 
 use crate::metrics::{AlertConfig, AlertResponse, Alert, SystemMetrics};
 

@@ -1,7 +1,7 @@
 pub mod collector;
 pub mod ring_buffer;
 
-pub use collector::{SystemMetrics, MetricsCollector, SmallDiskInfo, SmallProcessInfo, DiskInfo, ProcessInfo, SmallF32Array, SmallU64Array};
+pub use collector::{SystemMetrics, MetricsCollector};
 pub use ring_buffer::RingBuffer;
 
 use serde::{Deserialize, Serialize};
@@ -27,7 +27,7 @@ impl Default for AlertConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Alert {
-    pub alert_type: heapless::String<16>,
+    pub alert_type: String,
     pub value: f32,
     pub threshold: f32,
     pub timestamp: i64,
@@ -40,19 +40,8 @@ pub struct AlertResponse {
 }
 
 #[derive(Clone)]
-pub struct AppState {
+pub struct SharedState {
     pub tx: Arc<broadcast::Sender<SystemMetrics>>,
     pub alert_config: Arc<Mutex<AlertConfig>>,
     pub history: Arc<Mutex<RingBuffer<SystemMetrics>>>,
-}
-
-impl AppState {
-    pub fn new() -> Self {
-        let (tx, _) = broadcast::channel::<SystemMetrics>(100);
-        Self {
-            tx: Arc::new(tx),
-            alert_config: Arc::new(Mutex::new(AlertConfig::default())),
-            history: Arc::new(Mutex::new(RingBuffer::new(300))),
-        }
-    }
 }
