@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard">
+  <div class="dashboard" :class="{ compact: globalCompact }">
     <header class="header">
       <div class="header-content">
         <div class="logo">
@@ -22,8 +22,14 @@
           <button @click="toggleTheme" class="theme-btn" :title="lang === 'zh' ? '切换主题' : 'Toggle Theme'">
             {{ theme === 'dark' ? '🌙' : '☀️' }}
           </button>
+          <button @click="showHistorical = true" class="history-btn" :title="lang === 'zh' ? '历史对比' : 'Historical Comparison'">
+            📈
+          </button>
           <button @click="showSettings = !showSettings" class="settings-btn" :title="lang === 'zh' ? '设置' : 'Settings'">
             ⚙️
+          </button>
+          <button @click="toggleGlobalCompact" class="compact-toggle-btn" :title="lang === 'zh' ? '全局紧凑模式' : 'Global Compact Mode'">
+            {{ globalCompact ? '⊞' : '⊟' }}
           </button>
           <select v-model="lang" @change="changeLang" class="lang-select">
             <option value="en">EN</option>
@@ -33,7 +39,10 @@
       </div>
     </header>
 
+    <QuickStatsBar v-if="showQuickStats" :compact="globalCompact" />
+
     <SettingsPanel v-if="showSettings" @close="showSettings = false" />
+    <HistoricalComparison v-if="showHistorical" @close="showHistorical = false" />
 
     <div class="alerts" v-if="alerts.length > 0">
       <div v-for="alert in alerts" :key="alert.timestamp" class="alert-item" :class="alert.alert_type">
@@ -46,12 +55,12 @@
       <SystemOverview :metrics="currentMetrics" />
       <DiskList :disks="currentMetrics?.disks" />
       <div class="charts-grid">
-        <CpuChart :data="cpuHistory" />
-        <MemoryChart :data="memoryHistory" />
-        <DiskChart :data="diskHistory" />
-        <NetworkChart :data="networkHistory" />
+        <CpuChart :data="cpuHistory" @fullscreen="openFullscreen('cpu', 'CPU Usage', $event)" />
+        <MemoryChart :data="memoryHistory" @fullscreen="openFullscreen('memory', 'Memory Usage', $event)" />
+        <DiskChart :data="diskHistory" @fullscreen="openFullscreen('disk', 'Disk I/O', $event)" />
+        <NetworkChart :data="networkHistory" :securityInfo="networkSecurity" @fullscreen="openFullscreen('network', 'Network', $event)" />
       </div>
-      <ProcessList v-if="currentMetrics && currentMetrics.processes" :processes="currentMetrics.processes" />
+      <ProcessList v-if="currentMetrics && currentMetrics.processes" :processes="currentMetrics.processes" :compact="globalCompact" @update:compact="processCompact = $event" />
       <div class="actions">
         <button @click="exportData('json')" class="action-btn">
           📥 {{ lang === 'zh' ? '导出 JSON' : 'Export JSON' }}
@@ -61,6 +70,14 @@
         </button>
       </div>
     </main>
+
+    <FullscreenChart
+      v-if="fullscreen.show"
+      :show="fullscreen.show"
+      :title="fullscreen.title"
+      :data="fullscreen.data"
+      @close="closeFullscreen"
+    />
   </div>
 </template>
 
@@ -74,10 +91,17 @@ import SystemOverview from './components/SystemOverview.vue'
 import ProcessList from './components/ProcessList.vue'
 import DiskList from './components/DiskList.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
+import QuickStatsBar from './components/QuickStatsBar.vue'
+import HistoricalComparison from './components/HistoricalComparison.vue'
+import FullscreenChart from './components/FullscreenChart.vue'
 
 const lang = ref(localStorage.getItem('lang') || (navigator.language.toLowerCase().includes('zh') ? 'zh' : 'en'))
 const theme = ref(localStorage.getItem('theme') || 'dark')
 const showSettings = ref(false)
+const showHistorical = ref(false)
+const showQuickStats = ref(localStorage.getItem('showQuickStats') !== 'false')
+const globalCompact = ref(false)
+const processCompact = ref(false)
 const connected = ref(false)
 const currentMetrics = ref(null)
 const alerts = ref([])
@@ -85,6 +109,15 @@ const cpuHistory = ref([])
 const memoryHistory = ref([])
 const diskHistory = ref([])
 const networkHistory = ref([])
+const networkSecurity = ref(null)
+
+const fullscreen = ref({
+  show: false,
+  title: '',
+  data: []
+})
+
+const refreshInterval = ref(parseInt(localStorage.getItem('refreshInterval') || '1000'))
 
 function changeLang() {
   localStorage.setItem('lang', lang.value)
@@ -95,6 +128,33 @@ function toggleTheme() {
   theme.value = theme.value === 'dark' ? 'light' : 'dark'
   localStorage.setItem('theme', theme.value)
   document.documentElement.setAttribute('data-theme', theme.value)
+}
+
+function toggleGlobalCompact() {
+  globalCompact.value = !globalCompact.value
+  localStorage.setItem('globalCompact', globalCompact.value.toString())
+}
+
+function openFullscreen(type, title, data) {
+  fullscreen.value = {
+    show: true,
+    title,
+    data: data || getChartData(type)
+  }
+}
+
+function closeFullscreen() {
+  fullscreen.value.show = false
+}
+
+function getChartData(type) {
+  switch (type) {
+    case 'cpu': return cpuHistory.value
+    case 'memory': return memoryHistory.value
+    case 'disk': return diskHistory.value
+    case 'network': return networkHistory.value
+    default: return []
+  }
 }
 
 function exportData(format) {
@@ -129,7 +189,7 @@ const uptime = computed(() => {
   const days = Math.floor(seconds / 86400)
   const hours = Math.floor((seconds % 86400) / 3600)
   const mins = Math.floor((seconds % 3600) / 60)
-  if (days > 0) return `${days}d ${hours}h ${mins}m`
+  if (days > 0) return `${days}d ${hours}h`
   if (hours > 0) return `${hours}h ${mins}m`
   return `${mins}m`
 })
@@ -171,15 +231,37 @@ function fetchAlerts() {
     .catch(() => {})
 }
 
+function fetchNetworkSecurity() {
+  fetch('/api/network-security')
+    .then(r => r.json())
+    .then(data => { networkSecurity.value = data })
+    .catch(() => {})
+}
+
+function handleRefreshRateChange(e) {
+  refreshInterval.value = e.detail
+}
+
+function handleQuickStatsToggle(e) {
+  showQuickStats.value = e.detail
+}
+
 onMounted(() => {
   document.documentElement.setAttribute('data-theme', theme.value)
+  globalCompact.value = localStorage.getItem('globalCompact') === 'true'
   connect()
   setInterval(fetchAlerts, 5000)
+  setInterval(fetchNetworkSecurity, 10000)
+  fetchNetworkSecurity()
+  window.addEventListener('refresh-rate-change', handleRefreshRateChange)
+  window.addEventListener('quick-stats-toggle', handleQuickStatsToggle)
 })
 
 onUnmounted(() => {
   if (reconnectTimer) clearTimeout(reconnectTimer)
   if (ws) ws.close()
+  window.removeEventListener('refresh-rate-change', handleRefreshRateChange)
+  window.removeEventListener('quick-stats-toggle', handleQuickStatsToggle)
 })
 </script>
 
@@ -195,6 +277,8 @@ onUnmounted(() => {
   top: 0;
   z-index: 100;
 }
+
+.compact .header { padding: 0.75rem 1.5rem; }
 
 .header-content {
   max-width: 1400px;
@@ -214,7 +298,11 @@ onUnmounted(() => {
   -webkit-text-fill-color: transparent;
 }
 
+.compact .logo h1 { font-size: 1.25rem; }
+.compact .logo-icon { font-size: 1.5rem; }
+
 .header-right { display: flex; align-items: center; gap: 1rem; }
+.compact .header-right { gap: 0.75rem; }
 
 .sysinfo { display: flex; flex-direction: column; align-items: flex-end; }
 .hostname { font-weight: 600; font-size: 0.9rem; }
@@ -231,7 +319,7 @@ onUnmounted(() => {
 .disconnected { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
 .disconnected .status-dot { background: var(--danger); }
 
-.theme-btn, .settings-btn {
+.theme-btn, .settings-btn, .history-btn, .compact-toggle-btn {
   background: var(--bg-card);
   border: 1px solid var(--border);
   padding: 0.4rem 0.6rem;
@@ -240,7 +328,7 @@ onUnmounted(() => {
   font-size: 1rem;
   transition: background 0.2s;
 }
-.theme-btn:hover, .settings-btn:hover { background: var(--bg-secondary); }
+.theme-btn:hover, .settings-btn:hover, .history-btn:hover, .compact-toggle-btn:hover { background: var(--bg-secondary); }
 
 .lang-select {
   background: var(--bg-card);
@@ -281,8 +369,10 @@ onUnmounted(() => {
 }
 
 .main { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+.compact .main { padding: 1rem; }
 
 .charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+.compact .charts-grid { gap: 1rem; margin-bottom: 1rem; }
 
 .actions {
   display: flex;

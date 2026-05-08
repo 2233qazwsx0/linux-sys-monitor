@@ -17,10 +17,29 @@
             <span>Memory {{ lang === 'zh' ? '告警' : 'Alert' }} (%)</span>
             <input type="number" v-model.number="config.memory_threshold" min="0" max="100" />
           </label>
-          <button @click="saveConfig" class="save-btn">
-            {{ lang === 'zh' ? '保存设置' : 'Save Settings' }}
-          </button>
         </div>
+
+        <div class="setting-group">
+          <h3>{{ lang === 'zh' ? '显示设置' : 'Display Settings' }}</h3>
+          <label>
+            <span>{{ lang === 'zh' ? '刷新间隔' : 'Refresh Interval' }} (ms)</span>
+            <select v-model.number="refreshInterval" @change="updateRefreshRate">
+              <option :value="500">500ms</option>
+              <option :value="1000">1s</option>
+              <option :value="2000">2s</option>
+              <option :value="5000">5s</option>
+              <option :value="10000">10s</option>
+            </select>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" v-model="showQuickStats" @change="updateShowQuickStats" />
+            <span>{{ lang === 'zh' ? '显示快速统计栏' : 'Show Quick Stats Bar' }}</span>
+          </label>
+        </div>
+
+        <button @click="saveConfig" class="save-btn">
+          {{ lang === 'zh' ? '保存设置' : 'Save Settings' }}
+        </button>
       </div>
     </div>
   </div>
@@ -33,6 +52,8 @@ defineEmits(['close'])
 
 const lang = ref(localStorage.getItem('lang') || 'en')
 const config = ref({ cpu_threshold: 80, memory_threshold: 85 })
+const refreshInterval = ref(parseInt(localStorage.getItem('refreshInterval') || '1000'))
+const showQuickStats = ref(localStorage.getItem('showQuickStats') !== 'false')
 
 onMounted(() => {
   fetch('/api/alerts')
@@ -40,6 +61,16 @@ onMounted(() => {
     .then(data => { config.value = { ...data.config } })
     .catch(() => {})
 })
+
+function updateRefreshRate() {
+  localStorage.setItem('refreshInterval', refreshInterval.value.toString())
+  window.dispatchEvent(new CustomEvent('refresh-rate-change', { detail: refreshInterval.value }))
+}
+
+function updateShowQuickStats() {
+  localStorage.setItem('showQuickStats', showQuickStats.value.toString())
+  window.dispatchEvent(new CustomEvent('quick-stats-toggle', { detail: showQuickStats.value }))
+}
 
 function saveConfig() {
   fetch('/api/alerts/config', {
@@ -106,6 +137,30 @@ function saveConfig() {
   border-radius: 0.5rem;
   width: 100px;
   text-align: center;
+}
+
+.setting-group select {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  width: 100px;
+  cursor: pointer;
+}
+
+.checkbox-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
 }
 
 .save-btn {

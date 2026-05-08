@@ -8,6 +8,7 @@ use axum::{
 };
 use std::sync::{Arc, Mutex};
 use tokio::sync::broadcast;
+use serde::{Deserialize, Serialize};
 
 use crate::metrics::{AlertConfig, AlertResponse, Alert, SystemMetrics};
 
@@ -73,7 +74,7 @@ pub async fn export_data(
 ) -> String {
     let history = state.history.lock().unwrap();
     let data = history.get_all();
-    serde_json::to_string_pretty(&data).unwrap_or_default()
+    serde_json::to_string(&data).unwrap_or_default()
 }
 
 pub async fn websocket_handler(

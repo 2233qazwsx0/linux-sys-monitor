@@ -1,7 +1,6 @@
 use std::net::SocketAddr;
 use axum::{Router, routing::get, routing::post};
 use tower_http::cors::{CorsLayer, Any};
-use tracing_subscriber;
 use tokio::sync::broadcast;
 use std::sync::{Arc, Mutex};
 
@@ -15,7 +14,7 @@ async fn main() {
     let state = Arc::new(api::SharedState {
         tx: Arc::new(broadcast::channel::<metrics::SystemMetrics>(100).0),
         alert_config: Arc::new(Mutex::new(metrics::AlertConfig::default())),
-        history: Arc::new(Mutex::new(metrics::RingBuffer::new(3600))),
+        history: Arc::new(Mutex::new(metrics::RingBuffer::new(300))),
     });
     let state_clone = state.clone();
     let tx_clone = state.tx.clone();
