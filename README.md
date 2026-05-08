@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://github.com/2233qazwsx0/linux-sys-monitor/releases">
-    <img src="https://img.shields.io/badge/Version-2.5.0-6366f1?style=flat-square" alt="Version">
+    <img src="https://img.shields.io/badge/Version-3.0.0-6366f1?style=flat-square" alt="Version">
   </a>
   <a href="https://github.com/2233qazwsx0/linux-sys-monitor/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License">
@@ -10,140 +10,96 @@
   <a href="https://github.com/2233qazwsx0/linux-sys-monitor/stargazers">
     <img src="https://img.shields.io/github/stars/2233qazwsx0/linux-sys-monitor?style=flat-square" alt="Stars">
   </a>
-  <a href="https://github.com/2233qazwsx0/linux-sys-monitor/network/members">
-    <img src="https://img.shields.io/github/forks/2233qazwsx0/linux-sys-monitor?style=flat-square" alt="Forks">
-  </a>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Rust-1.75+-orange?style=flat-square&logo=rust" alt="Rust">
   <img src="https://img.shields.io/badge/Vue-3.4-green?style=flat-square&logo=vue.js" alt="Vue">
-  <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20Windows-blue?style=flat-square" alt="Platform">
-</p>
-
-<p align="center">
-  🌍 中文 | <a href="README.md">English</a>
+  <img src="https://img.shields.io/badge/Binary-649KB-00ff00?style=flat-square" alt="Binary Size">
 </p>
 
 ---
 
-一款**超轻量级**的实时系统监控工具，支持 Linux 和 Windows。零依赖部署，一键安装，内存占用不到 10MB！
+一款**超轻量级**的实时系统监控工具，支持 Linux/Windows + Web/CLI 两种模式！
 
-## ✨ 特性
+## ✨ 核心特性
 
 | 特性 | 说明 |
 |------|------|
-| 📊 **实时监控** | CPU、内存、Swap 每秒更新 |
-| 💾 **磁盘监控** | I/O 读写速率 + 各分区空间 |
-| 🌐 **网络监控** | 下载/上传速度实时追踪 |
-| 🔋 **电池状态** | 笔记本电池电量（支持自动检测）|
-| 📋 **进程列表** | Top 15 进程按 CPU 排序 |
-| 🚨 **告警系统** | 可配置 CPU/内存告警阈值 |
-| 📤 **数据导出** | 支持 JSON/CSV 格式导出历史数据 |
-| 🎨 **主题切换** | 深色/浅色主题一键切换 |
-| 🌍 **中英双语** | 自动检测浏览器语言 |
+| 📊 **实时监控** | CPU、内存、Swap、网络、磁盘 I/O |
+| 🌡️ **温度监控** | CPU/GPU 温度实时监测 |
+| 📈 **负载平均** | 1/5/15 分钟系统负载 |
+| 🔥 **进程管理** | Top 进程、进程终止、排序过滤 |
+| 🚨 **告警系统** | 可配置阈值，实时告警通知 |
+| 📤 **数据导出** | JSON/CSV 历史数据导出 |
+| 🎨 **主题切换** | 深色/浅色主题 |
+| 🌐 **网络详情** | 端口、连接状态、DNS、网关 |
 | 📱 **响应式** | 完美适配桌面和移动端 |
-| 🐳 **Docker** | 一行命令启动 |
-| 🪟 **Windows** | 原生 PowerShell 安装器 |
 
 ## 🚀 快速开始
 
-### Linux 一键安装
+### Web 模式（推荐）
 
 ```bash
+# 一键安装
 curl -sSL https://raw.githubusercontent.com/2233qazwsx0/linux-sys-monitor/main/setup.sh | bash
+
+# 或下载解压
+wget https://github.com/2233qazwsx0/linux-sys-monitor/releases/download/v3.0.0/linux-system-monitor-3.0.0-linux-x64.tar.gz
+tar -xzf linux-system-monitor-3.0.0-linux-x64.tar.gz
+cd v3.0.0 && sudo ./install.sh
 ```
 
-### Windows PowerShell
+打开 **http://localhost:8080**
 
-```powershell
-irm https://raw.githubusercontent.com/2233qazwsx0/linux-sys-monitor/main/install-windows.ps1 | iex
-```
-
-### Docker
+### CLI 模式（轻量终端）
 
 ```bash
-git clone https://github.com/2233qazwsx0/linux-sys-monitor.git
-cd linux-system-monitor
-docker-compose up -d
-```
+# 构建 CLI 版本
+cargo build --release --features cli -p linux-system-monitor --bin cli
 
-### CLI 终端版本
-
-```bash
-git clone -b cli https://github.com/2233qazwsx0/linux-sys-monitor.git
-cd linux-system-monitor
-cargo build --features cli --release -p linux-system-monitor --bin cli
+# 运行
 ./target/release/cli
 ```
 
-CLI 特性：
-- 🚀 超轻量级（约 500KB）
-- 📊 实时终端显示 CPU/内存/磁盘/网络
-- 🎨 彩色终端 UI
-- ⚡ 每秒自动更新
-
-### 直接下载
-
-从 [Releases](https://github.com/2233qazwsx0/linux-sys-monitor/releases/latest) 下载预编译二进制：
-
-```bash
-wget https://github.com/2233qazwsx0/linux-sys-monitor/releases/download/v2.5.0/linux-system-monitor-2.5.0-linux-x64.tar.gz
-tar -xzf linux-system-monitor-*.tar.gz
-cd v2.5.0 && sudo ./install.sh
+```
+┌────────────────────────────────────────────────────┐
+│  Linux System Monitor CLI v3.0.0                   │
+├────────────────────────────────────────────────────┤
+│  CPU: ████████░░ 45.2%  │  Memory: ██████░░░ 62%  │
+│  Load: 1.23 0.98 0.85   │  Uptime: 5d 12h 34m     │
+│  Temp: 58°C             │  Net: ↓1.2MB/s ↑256KB/s │
+├────────────────────────────────────────────────────┤
+│  Top Processes                                    │
+│  PID    Name           CPU%    Mem%                │
+│  1234   chrome         15.2    8.3                 │
+│  5678   code           8.1     5.2                 │
+└────────────────────────────────────────────────────┘
 ```
 
-然后打开 **http://localhost:8080**
+## 📦 性能指标
 
-## 📷 截图
+| 指标 | v3.0.0 | 竞品对比 |
+|------|--------|----------|
+| 二进制大小 | **649 KB** | Prometheus ~120MB |
+| 内存占用 | **< 5 MB** | Grafana ~500MB |
+| 启动时间 | **< 1s** | Prometheus ~5s |
+| 依赖数量 | **0** | 需要多服务 |
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  📊 系统监控                    ubuntu  Live ●  [EN ▼]    │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐    │
-│  │ ⚡ CPU    │ │ 🧠 内存   │ │ 💿 Swap  │ │ 💾 磁盘I/O│    │
-│  │  25.3%   │ │  62.1%   │ │   0.0%   │ │ ↓1.2MB/s │    │
-│  │ ████░░░░ │ │ ██████░░ │ │ ░░░░░░░░ │ │ ↑256KB/s │    │
-│  │ 4核 25%  │ │ 8G/16G   │ │ 0G/2G    │ │           │    │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘    │
-│                                                             │
-│  ⚠️ 告警                                                    │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │ 🔴 CPU 使用率超过阈值: 90.0% (当前: 92.3%)         │  │
-│  └─────────────────────────────────────────────────────┘  │
-│                                                             │
-│  💿 磁盘空间                                                │
-│  ┌─────────────────┐ ┌─────────────────┐                   │
-│  │ /dev/sda1  /   │ │ /dev/sda2  /home│                   │
-│  │ ████████░░ 78% │ │ ████░░░░░ 45%  │                   │
-│  │ 312G / 400G    │ │ 450G / 1TB     │                   │
-│  └─────────────────┘ └─────────────────┘                   │
-│                                                             │
-│  ┌──────────────────┐ ┌──────────────────┐                 │
-│  │ CPU 使用率         │ │ 内存使用率         │                 │
-│  │ ▁▂▃▄▅▆▇█▇▆▅▄▃▂▁ │ │ ▁▁▂▂▃▃▄▄▅▅▆▆▇▇ │                 │
-│  └──────────────────┘ └──────────────────┘                 │
-│                                                             │
-│  📋 热门进程                                                │
-│  ┌────┬────────┬────────┬────────┐                         │
-│  │ PID │ 名称    │ CPU %  │ 内存 % │                         │
-│  ├────┼────────┼────────┼────────┤                         │
-│  │1234│ chrome │  15.2  │   8.3  │                         │
-│  │5678│ code   │   8.1  │   5.2  │                         │
-│  └────┴────────┴────────┴────────┘                         │
-└─────────────────────────────────────────────────────────────┘
-```
+## 🌐 API 接口
 
-## ⚡ 性能对比
-
-| 指标 | System Monitor | Prometheus | Grafana |
-|------|---------------|------------|---------|
-| 二进制大小 | **1.5 MB** | ~120 MB | ~300 MB |
-| 内存占用 | **< 10 MB** | ~200 MB | ~500 MB |
-| 启动时间 | **< 1s** | ~5s | ~10s |
-| 依赖 | 0 | 需要多服务 | 需要多服务 |
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/health` | GET | 健康检查 |
+| `/api/history` | GET | 历史数据 |
+| `/api/alerts` | GET | 告警状态 |
+| `/api/alerts/config` | POST | 更新告警配置 |
+| `/api/export` | GET | 导出数据 |
+| `/api/historical` | GET | 历史对比 |
+| `/api/trends` | GET | 趋势数据 |
+| `/api/process/kill` | POST | 终止进程 |
+| `/api/network-security` | GET | 网络安全信息 |
+| `/ws` | WebSocket | 实时数据流 |
 
 ## 🛠️ 技术栈
 
@@ -154,120 +110,13 @@ Metrics    sysinfo crate
 Protocol   WebSocket
 ```
 
-## 📦 环境变量
-
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `MONITOR_PORT` | `8080` | 服务端口 |
-| `MONITOR_HOME` | `~/linux-system-monitor` | 安装目录 |
-| `RUST_LOG` | `info` | 日志级别 |
-
-## 🌐 API 接口
-
-### WebSocket 实时数据
-
-```
-ws://localhost:8080/ws
-```
-
-数据格式：
-```json
-{
-  "timestamp": 1700000000,
-  "uptime": 86400,
-  "hostname": "ubuntu",
-  "os_version": "Ubuntu 22.04",
-  "kernel": "5.15.0",
-  "cpu": {
-    "name": "Intel i7-12700K",
-    "usage": 25.3,
-    "core_count": 12,
-    "per_core": [20.0, 30.0, ...],
-    "frequencies": [3600, 3500, ...]
-  },
-  "memory": {
-    "total": 16777216,
-    "used": 10485760,
-    "available": 6291456,
-    "usage_percent": 62.5
-  },
-  "swap": {
-    "total": 2097152,
-    "used": 0,
-    "usage_percent": 0.0
-  },
-  "disk": {
-    "read_rate": 1048576,
-    "write_rate": 262144
-  },
-  "disks": [...],
-  "network": {
-    "rx_bytes": 5000000,
-    "tx_bytes": 2000000,
-    "rx_rate": 10240,
-    "tx_rate": 5120
-  },
-  "processes": [...],
-  "battery": null
-}
-```
-
-### REST API
-
-| 端点 | 方法 | 说明 |
-|------|------|------|
-| `/api/health` | GET | 健康检查 |
-| `/api/history` | GET | 历史数据 (最近1小时) |
-| `/api/alerts` | GET | 获取当前告警状态 |
-| `/api/alerts/config` | POST | 更新告警配置 |
-| `/api/export` | GET | 导出历史数据 (JSON) |
-
-### 告警配置
-
-```json
-POST /api/alerts/config
-{
-  "cpu_threshold": 90.0,
-  "memory_threshold": 85.0,
-  "disk_threshold": 95.0
-}
-```
-
-## 🏗️ 项目结构
-
-```
-linux-system-monitor/
-├── src/
-│   ├── main.rs           # 入口
-│   ├── api/              # HTTP/WebSocket
-│   └── metrics/          # 系统指标采集
-├── frontend/              # Vue.js 前端
-│   └── src/components/   # 图表组件
-├── Dockerfile
-├── docker-compose.yml
-├── setup.sh              # Linux 安装脚本
-└── install-windows.ps1   # Windows 安装脚本
-```
-
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
 
-1. Fork 本项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
-
 ## 📄 许可证
 
-本项目基于 MIT 许可证开源 - 详见 [LICENSE](LICENSE)
-
-## ⭐ 如果对你有帮助
-
-如果这个项目对你有帮助，请给我一个 Star！
-
-[![Star History](https://api.star-history.com/svg?repos=2233qazwsx0/linux-sys-monitor&type=Timeline)](https://star-history.com/#2233qazwsx0/linux-sys-monitor&Timeline)
+MIT License - 详见 [LICENSE](LICENSE)
 
 ---
 
