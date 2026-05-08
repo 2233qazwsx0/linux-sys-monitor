@@ -1136,4 +1136,803 @@ impl MetricsCollector {
         
         limits
     }
+
+    pub fn collect_cpu_governor(&self) -> Vec<CpuGovernor> {
+        let mut governors = Vec::new();
+        let cpus = self.system.cpus();
+        
+        for (i, _) in cpus.iter().enumerate() {
+            let governor_path = format!("/sys/devices/system/cpu/cpu{}/cpufreq/scaling_governor", i);
+            let governor = fs::read_to_string(&governor_path)
+                .map(|s| s.trim().to_string())
+                .unwrap_or_else(|_| "unknown".to_string());
+            governors.push(CpuGovernor {
+                cpu_index: i,
+                governor,
+            });
+        }
+        governors
+    }
+
+    pub fn collect_context_switches(&self) -> ContextSwitches {
+        let mut voluntary: u64 = 0;
+        let mut involuntary: u64 = 0;
+        
+        if let Ok(content) = fs::read_to_string("/proc/stat") {
+            for line in content.lines() {
+                if line.starts_with("ctxt ") {
+                    if let Some(val) = line.split_whitespace().nth(1) {
+                        voluntary = val.parse().unwrap_or(0);
+                    }
+                } else if line.starts_with("intr ") {
+                    if let Some(val) = line.split_whitespace().nth(1) {
+                        involuntary = val.parse().unwrap_or(0);
+                    }
+                }
+            }
+        }
+        
+        ContextSwitches {
+            voluntary,
+            involuntary,
+            total: voluntary + involuntary,
+        }
+    }
+
+    pub fn collect_interrupts(&self) -> Interrupts {
+        let mut total: u64 = 0;
+        let mut per_cpu: Vec<u64> = Vec::new();
+        let num_cpus = self.system.cpus().len();
+        
+        if let Ok(content) = fs::read_to_string("/proc/interrupts") {
+            for line in content.lines().skip(1) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() > num_cpus {
+                    let mut cpu_sum: u64 = 0;
+                    for i in 1..=num_cpus.min(parts.len() - 1) {
+                        if let Ok(val) = parts[i].parse::<u64>() {
+                            cpu_sum += val;
+                        }
+                    }
+                    total += cpu_sum;
+                }
+            }
+        }
+        
+        if let Ok(content) = fs::read_to_string("/proc/interrupts") {
+            for cpu_idx in 0..num_cpus {
+                let mut cpu_total: u64 = 0;
+                for line in content.lines().skip(1) {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if parts.len() > cpu_idx + 1 {
+                        if let Ok(val) = parts[cpu_idx + 1].parse::<u64>() {
+                            cpu_total += val;
+                        }
+                    }
+                }
+                per_cpu.push(cpu_total);
+            }
+        }
+        
+        Interrupts { total, per_cpu }
+    }
+
+    pub fn collect_softirqs(&self) -> Softirqs {
+        let softirq_names = [
+            "HI", "TIMER", "NET_TX", "NET_RX", "BLOCK", "IRQ_POLL",
+            "TASKLET", "SCHED", "HRTIMER", "RCU"
+        ];
+        
+        let mut total: u64 = 0;
+        let mut per_softirq: Vec<SoftirqInfo> = Vec::new();
+        
+        if let Ok(content) = fs::read_to_string("/proc/softirqs") {
+            for line in content.lines().skip(1) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if !parts.is_empty() {
+                    let idx = per_softirq.len();
+                    if idx < softirq_names.len() {
+                        let mut count: u64 = 0;
+                        for p in parts.iter().skip(1) {
+                            if let Ok(v) = p.parse::<u64>() {
+                                count += v;
+                            }
+                        }
+                        total += count;
+                        per_softirq.push(SoftirqInfo {
+                            index: idx as u32,
+                            name: softirq_names[idx].to_string(),
+                            count,
+                        });
+                    }
+                }
+            }
+        }
+        
+        Softirqs { total, per_softirq }
+    }
+
+    pub fn collect_memory_pressure(&self) -> MemoryPressure {
+        if let Ok(content) = fs::read_to_string("/proc/pressure/memory") {
+            let parts: Vec<&str> = content.split_whitespace().collect();
+            if parts.len() >= 3 {
+                let avg10 = parts[1].parse::<f64>().unwrap_or(0.0);
+                let level = if avg10 > 60.0 {
+                    "critical".to_string()
+                } else if avg10 > 30.0 {
+                    "medium".to_string()
+                } else {
+                    "low".to_string()
+                };
+                return MemoryPressure {
+                    level,
+                    numeric_value: (avg10 * 100.0) as u32,
+                };
+            }
+        }
+        
+        MemoryPressure {
+            level: "unknown".to_string(),
+            numeric_value: 0,
+        }
+    }
+
+    pub fn collect_swap_rate(&mut self) -> SwapRate {
+        let mut swap_in: u64 = 0;
+        let mut swap_out: u64 = 0;
+        
+        if let Ok(content) = fs::read_to_string("/proc/vmstat") {
+            for line in content.lines() {
+                if line.starts_with("pswpin ") {
+                    if let Some(val) = line.split_whitespace().nth(1) {
+                        swap_in = val.parse().unwrap_or(0);
+                    }
+                } else if line.starts_with("pswpout ") {
+                    if let Some(val) = line.split_whitespace().nth(1) {
+                        swap_out = val.parse().unwrap_or(0);
+                    }
+                }
+            }
+        }
+        
+        SwapRate {
+            swap_in_rate: swap_in,
+            swap_out_rate: swap_out,
+        }
+    }
+
+    pub fn collect_cpu_steal_time(&self) -> CpuStealTime {
+        let cpus = self.system.cpus();
+        let mut per_core_steal: Vec<f32> = Vec::new();
+        let mut total_steal: f32 = 0.0;
+        
+        for cpu in cpus {
+            let steal = cpu.cpu_usage();
+            per_core_steal.push(steal);
+            total_steal += steal;
+        }
+        
+        total_steal /= cpus.len().max(1) as f32;
+        
+        CpuStealTime {
+            total_steal,
+            per_core_steal,
+        }
+    }
+
+    pub fn collect_io_operations(&self) -> IoOperations {
+        let mut reads: u64 = 0;
+        let mut writes: u64 = 0;
+        let mut read_bytes: u64 = 0;
+        let mut write_bytes: u64 = 0;
+        let mut per_disk: Vec<DiskIoStats> = Vec::new();
+        
+        if let Ok(content) = fs::read_to_string("/proc/diskstats") {
+            for line in content.lines() {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 14 {
+                    let device = parts[2].to_string();
+                    if device.starts_with("loop") || device.starts_with("ram") {
+                        continue;
+                    }
+                    
+                    if let (Ok(r), Ok(w), Ok(rb), Ok(wb)) = (
+                        parts[5].parse::<u64>(),
+                        parts[9].parse::<u64>(),
+                        parts[6].parse::<u64>(),
+                        parts[10].parse::<u64>(),
+                    ) {
+                        reads += r;
+                        writes += w;
+                        read_bytes += rb * 512;
+                        write_bytes += wb * 512;
+                        
+                        per_disk.push(DiskIoStats {
+                            device,
+                            reads: r,
+                            writes: w,
+                        });
+                    }
+                }
+            }
+        }
+        
+        IoOperations {
+            reads,
+            writes,
+            read_bytes,
+            write_bytes,
+            per_disk,
+        }
+    }
+
+    pub fn collect_disk_queue_depth(&self) -> Vec<DiskQueueDepth> {
+        let mut queues: Vec<DiskQueueDepth> = Vec::new();
+        
+        if let Ok(entries) = fs::read_dir("/sys/block") {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let device_name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                
+                if device_name.starts_with("loop") || device_name.starts_with("ram") {
+                    continue;
+                }
+                
+                let queue_path = path.join("queue");
+                
+                let queue_depth = fs::read_to_string(queue_path.join("nr_requests"))
+                    .ok()
+                    .and_then(|s| s.trim().parse::<u32>().ok())
+                    .unwrap_or(0);
+                
+                let avg_queue = fs::read_to_string(queue_path.join("avg_queue_size"))
+                    .ok()
+                    .and_then(|s| s.trim().parse::<f64>().ok())
+                    .unwrap_or(0.0);
+                
+                queues.push(DiskQueueDepth {
+                    device: device_name,
+                    queue_depth,
+                    avg_queue_size: avg_queue / 100.0,
+                });
+            }
+        }
+        
+        queues
+    }
+
+    pub fn collect_filesystem_stats(&self) -> Vec<FilesystemStats> {
+        let mut stats: Vec<FilesystemStats> = Vec::new();
+        
+        if let Ok(output) = std::process::Command::new("df")
+            .args(["-T", "-B1", "-i"])
+            .output()
+        {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                for line in content.lines().skip(1) {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if parts.len() >= 7 {
+                        let fs_type = parts[1].to_string();
+                        let mount_point = parts[6].to_string();
+                        
+                        if mount_point.starts_with("/snap") || mount_point == "tmpfs" || mount_point == "devtmpfs" {
+                            continue;
+                        }
+                        
+                        let total: u64 = parts[2].parse().unwrap_or(0);
+                        let used: u64 = parts[3].parse().unwrap_or(0);
+                        let available: u64 = parts[4].parse().unwrap_or(0);
+                        
+                        let inode_total: u64 = parts[5].parse().unwrap_or(0);
+                        let inode_used: u64 = parts[6].parse().unwrap_or(0);
+                        let inode_free = inode_total.saturating_sub(inode_used);
+                        
+                        let usage_percent = if total > 0 {
+                            (used as f32 / total as f32) * 100.0
+                        } else {
+                            0.0
+                        };
+                        
+                        let inode_usage_percent = if inode_total > 0 {
+                            (inode_used as f32 / inode_total as f32) * 100.0
+                        } else {
+                            0.0
+                        };
+                        
+                        stats.push(FilesystemStats {
+                            filesystem: fs_type,
+                            mount_point,
+                            total,
+                            used,
+                            available,
+                            usage_percent,
+                            inode_total,
+                            inode_used,
+                            inode_free,
+                            inode_usage_percent,
+                        });
+                    }
+                }
+            }
+        }
+        
+        stats
+    }
+
+    pub fn collect_inode_usage(&self) -> Vec<InodeUsage> {
+        let mut usage: Vec<InodeUsage> = Vec::new();
+        
+        if let Ok(output) = std::process::Command::new("df")
+            .args(["-i"])
+            .output()
+        {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                for line in content.lines().skip(1) {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if parts.len() >= 6 {
+                        let mount_point = parts[5].to_string();
+                        
+                        if mount_point.starts_with("/snap") || mount_point == "tmpfs" {
+                            continue;
+                        }
+                        
+                        let inode_total: u64 = parts[1].parse().unwrap_or(0);
+                        let inode_used: u64 = parts[2].parse().unwrap_or(0);
+                        let usage_percent = if inode_total > 0 {
+                            (inode_used as f32 / inode_total as f32) * 100.0
+                        } else {
+                            0.0
+                        };
+                        
+                        usage.push(InodeUsage {
+                            filesystem: parts[0].to_string(),
+                            mount_point,
+                            total: inode_total,
+                            used: inode_used,
+                            usage_percent,
+                        });
+                    }
+                }
+            }
+        }
+        
+        usage
+    }
+
+    pub fn collect_open_files_count(&self) -> OpenFilesCount {
+        let mut fds: u64 = 0;
+        let mut sockets: u64 = 0;
+        let mut pipes: u64 = 0;
+        
+        for (pid, _) in self.system.processes() {
+            let fd_path = format!("/proc/{}/fd", pid);
+            if let Ok(entries) = fs::read_dir(&fd_path) {
+                for entry in entries.flatten() {
+                    if let Ok(link) = fs::read_link(entry.path()) {
+                        let path_str = link.to_string_lossy();
+                        if path_str.starts_with("socket:[") {
+                            sockets += 1;
+                        } else if path_str.starts_with("pipe:[") {
+                            pipes += 1;
+                        } else {
+                            fds += 1;
+                        }
+                    }
+                }
+            }
+        }
+        
+        OpenFilesCount {
+            total: fds + sockets + pipes,
+            file_descriptors: fds,
+            sockets,
+            pipes,
+        }
+    }
+
+    pub fn collect_uptime_detailed(&self) -> UptimeDetailed {
+        let mut seconds: u64 = 0;
+        let mut idle_seconds: u64 = 0;
+        
+        if let Ok(content) = fs::read_to_string("/proc/uptime") {
+            let parts: Vec<&str> = content.split_whitespace().collect();
+            if parts.len() >= 2 {
+                seconds = parts[0].parse().unwrap_or(0);
+                idle_seconds = parts[1].parse().unwrap_or(0);
+            }
+        }
+        
+        let days = seconds / 86400;
+        let hours = (seconds % 86400) / 3600;
+        let minutes = (seconds % 3600) / 60;
+        let secs = seconds % 60;
+        
+        let formatted = format!("{} days, {}:{:02}:{:02}", days, hours, minutes, secs);
+        
+        UptimeDetailed {
+            seconds,
+            days,
+            hours,
+            minutes,
+            formatted,
+            idle_seconds,
+        }
+    }
+
+    pub fn collect_load_normalized(&self) -> LoadNormalized {
+        let mut one_min: f64 = 0.0;
+        let mut five_min: f64 = 0.0;
+        let mut fifteen_min: f64 = 0.0;
+        
+        if let Ok(content) = fs::read_to_string("/proc/loadavg") {
+            let parts: Vec<&str> = content.split_whitespace().collect();
+            if parts.len() >= 3 {
+                one_min = parts[0].parse().unwrap_or(0.0);
+                five_min = parts[1].parse().unwrap_or(0.0);
+                fifteen_min = parts[2].parse().unwrap_or(0.0);
+            }
+        }
+        
+        let num_cpus = self.system.cpus().len().max(1) as f64;
+        let normalized = vec![
+            one_min / num_cpus,
+            five_min / num_cpus,
+            fifteen_min / num_cpus,
+        ];
+        
+        LoadNormalized {
+            one_minute: one_min,
+            five_minutes: five_min,
+            fifteen_minutes: fifteen_min,
+            normalized_to_cores: normalized,
+        }
+    }
+
+    pub fn collect_per_process_io(&self) -> Vec<PerProcessIo> {
+        let mut io_stats: Vec<PerProcessIo> = Vec::new();
+        
+        for (pid, process) in self.system.processes() {
+            let io_path = format!("/proc/{}/io", pid);
+            if let Ok(content) = fs::read_to_string(&io_path) {
+                let mut read_bytes: u64 = 0;
+                let mut write_bytes: u64 = 0;
+                let mut syscr: u64 = 0;
+                let mut syscw: u64 = 0;
+                
+                for line in content.lines() {
+                    if line.starts_with("rchar:") {
+                        syscr = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                    } else if line.starts_with("wchar:") {
+                        syscw = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                    } else if line.starts_with("read_bytes:") {
+                        read_bytes = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                    } else if line.starts_with("write_bytes:") {
+                        write_bytes = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                    }
+                }
+                
+                if read_bytes > 0 || write_bytes > 0 || syscr > 0 || syscw > 0 {
+                    io_stats.push(PerProcessIo {
+                        pid: pid.as_u32(),
+                        name: process.name().to_string(),
+                        read_bytes,
+                        write_bytes,
+                        syscr,
+                        syscw,
+                    });
+                }
+            }
+        }
+        
+        io_stats.sort_by(|a, b| {
+            let a_total = a.read_bytes + a.write_bytes;
+            let b_total = b.read_bytes + b.write_bytes;
+            b_total.cmp(&a_total)
+        });
+        
+        io_stats.truncate(20);
+        io_stats
+    }
+
+    pub fn collect_memory_zones(&self) -> MemoryZones {
+        let mut zones: Vec<MemoryZoneInfo> = Vec::new();
+        
+        let zone_names = ["DMA", "DMA32", "Normal", "HighMem", "Movable"];
+        
+        for zone_name in &zone_names {
+            let zone_path = "/proc/zoneinfo";
+            if let Ok(content) = fs::read_to_string(zone_path) {
+                let mut in_zone = false;
+                let mut current_zone = String::new();
+                
+                for line in content.lines() {
+                    if line.starts_with(&format!("Node {}, zone {}", 0, zone_name)) {
+                        in_zone = true;
+                        current_zone = zone_name.to_string();
+                    } else if line.starts_with("Node") && line.contains("zone") {
+                        in_zone = false;
+                    }
+                    
+                    if in_zone {
+                        if line.starts_with("  pages free") {
+                            let free: u64 = line.split_whitespace().nth(3)
+                                .and_then(|s| s.parse().ok())
+                                .unwrap_or(0) * 4096;
+                            
+                            zones.push(MemoryZoneInfo {
+                                name: current_zone.clone(),
+                                total: 0,
+                                used: 0,
+                                free,
+                                present: 0,
+                            });
+                            in_zone = false;
+                        }
+                    }
+                }
+            }
+        }
+        
+        MemoryZones { zones }
+    }
+
+    pub fn collect_huge_pages(&self) -> HugePages {
+        let mut total: u64 = 0;
+        let mut free: u64 = 0;
+        let mut surplus: u64 = 0;
+        let mut size_kb: u64 = 0;
+        
+        if let Ok(content) = fs::read_to_string("/proc/meminfo") {
+            for line in content.lines() {
+                if line.starts_with("HugePages_Total:") {
+                    total = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                } else if line.starts_with("HugePages_Free:") {
+                    free = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                } else if line.starts_with("Hugepagesurplus:") {
+                    surplus = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                } else if line.starts_with("Hugepagesize:") {
+                    size_kb = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(2048);
+                }
+            }
+        }
+        
+        HugePages {
+            total,
+            free,
+            surplus,
+            default_size: total * size_kb * 1024,
+            size_kb,
+        }
+    }
+
+    pub fn collect_kernel_threads(&self) -> KernelThreads {
+        let mut threads: Vec<KernelThreadInfo> = Vec::new();
+        
+        for (pid, process) in self.system.processes() {
+            let name = process.name().to_string();
+            
+            if name.starts_with('[') {
+                threads.push(KernelThreadInfo {
+                    pid: pid.as_u32(),
+                    name,
+                    state: "kernel".to_string(),
+                });
+            }
+        }
+        
+        let count = threads.len() as u64;
+        KernelThreads { count, threads }
+    }
+
+    pub fn collect_user_threads(&self) -> UserThreads {
+        let count = self.system.processes().values()
+            .filter(|p| !p.name().starts_with('['))
+            .count() as u64;
+        
+        UserThreads { count }
+    }
+
+    pub fn collect_zombie_processes(&self) -> ZombieProcesses {
+        let mut zombies: Vec<ZombieProcessInfo> = Vec::new();
+        
+        for (pid, process) in self.system.processes() {
+            if process.status() == sysinfo::ProcessStatus::Zombie {
+                let ppid = process.parent().map(|p| p.as_u32()).unwrap_or(0);
+                zombies.push(ZombieProcessInfo {
+                    pid: pid.as_u32(),
+                    name: process.name().to_string(),
+                    ppid,
+                });
+            }
+        }
+        
+        let count = zombies.len() as u64;
+        ZombieProcesses { count, zombies }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CpuGovernor {
+    pub cpu_index: usize,
+    pub governor: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContextSwitches {
+    pub voluntary: u64,
+    pub involuntary: u64,
+    pub total: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Interrupts {
+    pub total: u64,
+    pub per_cpu: Vec<u64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SoftirqInfo {
+    pub index: u32,
+    pub name: String,
+    pub count: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Softirqs {
+    pub total: u64,
+    pub per_softirq: Vec<SoftirqInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MemoryPressure {
+    pub level: String,
+    pub numeric_value: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SwapRate {
+    pub swap_in_rate: u64,
+    pub swap_out_rate: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CpuStealTime {
+    pub total_steal: f32,
+    pub per_core_steal: Vec<f32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiskIoStats {
+    pub device: String,
+    pub reads: u64,
+    pub writes: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IoOperations {
+    pub reads: u64,
+    pub writes: u64,
+    pub read_bytes: u64,
+    pub write_bytes: u64,
+    pub per_disk: Vec<DiskIoStats>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiskQueueDepth {
+    pub device: String,
+    pub queue_depth: u32,
+    pub avg_queue_size: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FilesystemStats {
+    pub filesystem: String,
+    pub mount_point: String,
+    pub total: u64,
+    pub used: u64,
+    pub available: u64,
+    pub usage_percent: f32,
+    pub inode_total: u64,
+    pub inode_used: u64,
+    pub inode_free: u64,
+    pub inode_usage_percent: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InodeUsage {
+    pub filesystem: String,
+    pub mount_point: String,
+    pub total: u64,
+    pub used: u64,
+    pub usage_percent: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenFilesCount {
+    pub total: u64,
+    pub file_descriptors: u64,
+    pub sockets: u64,
+    pub pipes: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UptimeDetailed {
+    pub seconds: u64,
+    pub days: u64,
+    pub hours: u64,
+    pub minutes: u64,
+    pub formatted: String,
+    pub idle_seconds: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoadNormalized {
+    pub one_minute: f64,
+    pub five_minutes: f64,
+    pub fifteen_minutes: f64,
+    pub normalized_to_cores: Vec<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PerProcessIo {
+    pub pid: u32,
+    pub name: String,
+    pub read_bytes: u64,
+    pub write_bytes: u64,
+    pub syscr: u64,
+    pub syscw: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MemoryZoneInfo {
+    pub name: String,
+    pub total: u64,
+    pub used: u64,
+    pub free: u64,
+    pub present: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MemoryZones {
+    pub zones: Vec<MemoryZoneInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HugePages {
+    pub total: u64,
+    pub free: u64,
+    pub surplus: u64,
+    pub default_size: u64,
+    pub size_kb: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KernelThreadInfo {
+    pub pid: u32,
+    pub name: String,
+    pub state: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KernelThreads {
+    pub count: u64,
+    pub threads: Vec<KernelThreadInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserThreads {
+    pub count: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ZombieProcessInfo {
+    pub pid: u32,
+    pub name: String,
+    pub ppid: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ZombieProcesses {
+    pub count: u64,
+    pub zombies: Vec<ZombieProcessInfo>,
 }
