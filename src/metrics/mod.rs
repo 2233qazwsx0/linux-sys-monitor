@@ -11,6 +11,11 @@ pub use collector::{
     UdpEndpoints, ListeningPort, ConnectionInfo, BandwidthTotal, PacketCounts,
     ErrorCounts, DuplexInfo, WirelessInfo, CellularInfo, DnsStats, RouteEntry,
     ArpEntry, NetworkNamespace, SocketStats, ConnectionLimits, UdpEndpoint,
+    CpuGovernor, ContextSwitches, Interrupts, Softirqs, SoftirqInfo,
+    MemoryPressure, SwapRate, CpuStealTime, IoOperations, DiskIoStats,
+    DiskQueueDepth, FilesystemStats, InodeUsage, OpenFilesCount, UptimeDetailed,
+    LoadNormalized, PerProcessIo, MemoryZones, MemoryZoneInfo, HugePages,
+    KernelThreads, KernelThreadInfo, UserThreads, ZombieProcesses, ZombieProcessInfo,
 };
 pub use ring_buffer::RingBuffer;
 
