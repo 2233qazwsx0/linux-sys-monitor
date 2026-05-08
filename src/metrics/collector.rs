@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sysinfo::{System, Disks, CpuRefreshKind, MemoryRefreshKind, RefreshKind, Networks};
 use std::fs;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemMetrics {
@@ -15,6 +16,7 @@ pub struct SystemMetrics {
     pub disk: DiskMetrics,
     pub disks: Vec<DiskInfo>,
     pub network: NetworkMetrics,
+    pub network_details: NetworkDetails,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub processes: Option<Vec<ProcessInfo>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -83,6 +85,196 @@ pub struct BatteryInfo {
     pub charge_percent: f32,
     pub is_charging: bool,
     pub time_remaining: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct NetworkDetails {
+    pub interfaces: Vec<NetworkInterface>,
+    pub tcp_states: TcpStates,
+    pub udp_endpoints: UdpEndpoints,
+    pub listening_ports: Vec<ListeningPort>,
+    pub established_connections: Vec<ConnectionInfo>,
+    pub bandwidth_total: BandwidthTotal,
+    pub packet_counts: PacketCounts,
+    pub error_counts: ErrorCounts,
+    pub interface_duplex: HashMap<String, DuplexInfo>,
+    pub wireless_info: Vec<WirelessInfo>,
+    pub cellular_info: Vec<CellularInfo>,
+    pub dns_stats: Option<DnsStats>,
+    pub routing_table: Vec<RouteEntry>,
+    pub arp_table: Vec<ArpEntry>,
+    pub namespaces: Vec<NetworkNamespace>,
+    pub socket_stats: SocketStats,
+    pub connection_limits: ConnectionLimits,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NetworkInterface {
+    pub name: String,
+    pub ipv4: Vec<String>,
+    pub ipv6: Vec<String>,
+    pub mtu: u32,
+    pub flags: Vec<String>,
+    pub mac: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct TcpStates {
+    pub established: u32,
+    pub syn_sent: u32,
+    pub syn_recv: u32,
+    pub fin_wait1: u32,
+    pub fin_wait2: u32,
+    pub time_wait: u32,
+    pub close: u32,
+    pub close_wait: u32,
+    pub last_ack: u32,
+    pub listen: u32,
+    pub closing: u32,
+    pub total: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct UdpEndpoints {
+    pub total: u32,
+    pub local_endpoints: Vec<UdpEndpoint>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UdpEndpoint {
+    pub local_addr: String,
+    pub inode: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ListeningPort {
+    pub port: u16,
+    pub protocol: String,
+    pub process_name: Option<String>,
+    pub pid: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConnectionInfo {
+    pub protocol: String,
+    pub local_addr: String,
+    pub remote_addr: String,
+    pub state: String,
+    pub pid: Option<u32>,
+    pub process_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct BandwidthTotal {
+    pub rx_bytes: u64,
+    pub tx_bytes: u64,
+    pub rx_packets: u64,
+    pub tx_packets: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct PacketCounts {
+    pub rx_packets: u64,
+    pub tx_packets: u64,
+    pub rx_errors: u64,
+    pub tx_errors: u64,
+    pub rx_dropped: u64,
+    pub tx_dropped: u64,
+    pub multicast: u64,
+    pub collisions: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ErrorCounts {
+    pub rx_errors: u64,
+    pub tx_errors: u64,
+    pub rx_dropped: u64,
+    pub tx_dropped: u64,
+    pub rx_fifo_errors: u64,
+    pub tx_fifo_errors: u64,
+    pub rx_frame_errors: u64,
+    pub rx_length_errors: u64,
+    pub rx_crc_errors: u64,
+    pub tx_aborted_errors: u64,
+    pub tx_carrier_errors: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DuplexInfo {
+    pub duplex: String,
+    pub speed: u32,
+    pub autoneg: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WirelessInfo {
+    pub interface: String,
+    pub ssid: Option<String>,
+    pub signal_dbm: i32,
+    pub signal_quality: u8,
+    pub bitrate: f64,
+    pub channel: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CellularInfo {
+    pub interface: String,
+    pub operator: Option<String>,
+    pub technology: Option<String>,
+    pub signal_strength: Option<i32>,
+    pub mobile_ip: Option<String>,
+    pub roaming: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DnsStats {
+    pub queries_total: u64,
+    pub queries_successful: u64,
+    pub queries_failed: u64,
+    pub cache_hits: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RouteEntry {
+    pub destination: String,
+    pub gateway: String,
+    pub genmask: String,
+    pub flags: String,
+    pub metric: u32,
+    pub interface: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ArpEntry {
+    pub ip_address: String,
+    pub hw_address: String,
+    pub flags: String,
+    pub device: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NetworkNamespace {
+    pub name: String,
+    pub interfaces: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SocketStats {
+    pub used: u32,
+    pub tcp_alloc: u32,
+    pub tcp_orphan: u32,
+    pub tcp_tw: u32,
+    pub alloc: u32,
+    pub mem: u32,
+    pub memory: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ConnectionLimits {
+    pub max_files: u64,
+    pub used_files: u64,
+    pub max_sockets: u64,
+    pub used_sockets: u64,
 }
 
 pub struct MetricsCollector {
@@ -341,5 +533,607 @@ impl MetricsCollector {
             }
         }
         None
+    }
+
+    fn collect_network_details(&self) -> NetworkDetails {
+        NetworkDetails {
+            interfaces: self.collect_interfaces(),
+            tcp_states: self.collect_tcp_states(),
+            udp_endpoints: self.collect_udp_endpoints(),
+            listening_ports: self.collect_listening_ports(),
+            established_connections: self.collect_established_connections(),
+            bandwidth_total: self.collect_bandwidth_total(),
+            packet_counts: self.collect_packet_counts(),
+            error_counts: self.collect_error_counts(),
+            interface_duplex: self.collect_interface_duplex(),
+            wireless_info: self.collect_wireless_info(),
+            cellular_info: self.collect_cellular_info(),
+            dns_stats: self.collect_dns_stats(),
+            routing_table: self.collect_routing_table(),
+            arp_table: self.collect_arp_table(),
+            namespaces: self.collect_network_namespaces(),
+            socket_stats: self.collect_socket_stats(),
+            connection_limits: self.collect_connection_limits(),
+        }
+    }
+
+    fn collect_interfaces(&self) -> Vec<NetworkInterface> {
+        let mut interfaces = Vec::new();
+        
+        if let Ok(paths) = fs::read_dir("/sys/class/net") {
+            for path in paths.flatten() {
+                let name = path.file_name().to_string_lossy().to_string();
+                if let Some(iface) = self.read_interface_info(&name) {
+                    interfaces.push(iface);
+                }
+            }
+        }
+        
+        interfaces
+    }
+
+    fn read_interface_info(&self, name: &str) -> Option<NetworkInterface> {
+        let sys_path = format!("/sys/class/net/{}", name);
+        
+        let ipv4 = self.read_ipv4_addresses(&sys_path);
+        let ipv6 = self.read_ipv6_addresses(&sys_path);
+        
+        let mtu = fs::read_to_string(format!("{}/mtu", sys_path))
+            .ok()
+            .and_then(|s| s.trim().parse().ok())
+            .unwrap_or(1500);
+        
+        let flags = self.read_interface_flags(&sys_path);
+        
+        let mac = fs::read_to_string(format!("{}/address", sys_path))
+            .ok()
+            .map(|s| s.trim().to_string());
+        
+        Some(NetworkInterface {
+            name: name.to_string(),
+            ipv4,
+            ipv6,
+            mtu,
+            flags,
+            mac,
+        })
+    }
+
+    fn read_ipv4_addresses(&self, sys_path: &str) -> Vec<String> {
+        let mut addrs = Vec::new();
+        
+        if let Ok(content) = fs::read_to_string(format!("{}/ipv4/addr", sys_path)) {
+            for line in content.lines() {
+                if line.starts_with("inet ") {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if !parts.is_empty() {
+                        addrs.push(parts[1].to_string());
+                    }
+                }
+            }
+        }
+        
+        addrs
+    }
+
+    fn read_ipv6_addresses(&self, sys_path: &str) -> Vec<String> {
+        let mut addrs = Vec::new();
+        
+        if let Ok(content) = fs::read_to_string(format!("{}/ipv6/addr", sys_path)) {
+            for line in content.lines() {
+                if !line.starts_with("inet6 ") { continue; }
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if !parts.is_empty() {
+                    addrs.push(parts[1].to_string());
+                }
+            }
+        }
+        
+        addrs
+    }
+
+    fn read_interface_flags(&self, sys_path: &str) -> Vec<String> {
+        let mut flags_list = Vec::new();
+        
+        let flags = fs::read_to_string(format!("{}/flags", sys_path))
+            .ok()
+            .and_then(|s| {
+                let s = s.trim().trim_start_matches("0x");
+                u32::from_str_radix(s, 16).ok()
+            })
+            .unwrap_or(0);
+        
+        if flags & 0x01 != 0 { flags_list.push("UP".to_string()); }
+        if flags & 0x02 != 0 { flags_list.push("BROADCAST".to_string()); }
+        if flags & 0x08 != 0 { flags_list.push("LOOPBACK".to_string()); }
+        if flags & 0x10 != 0 { flags_list.push("POINTTOPOINT".to_string()); }
+        if flags & 0x40 != 0 { flags_list.push("RUNNING".to_string()); }
+        if flags & 0x80 != 0 { flags_list.push("NOARP".to_string()); }
+        if flags & 0x100 != 0 { flags_list.push("PROMISC".to_string()); }
+        if flags & 0x800 != 0 { flags_list.push("MULTICAST".to_string()); }
+        
+        flags_list
+    }
+
+    fn collect_tcp_states(&self) -> TcpStates {
+        let mut states = TcpStates::default();
+        
+        if let Ok(content) = fs::read_to_string("/proc/net/tcp") {
+            for line in content.lines().skip(1) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 4 {
+                    if let Ok(state) = u8::from_str_radix(parts[3], 16) {
+                        match state {
+                            0x01 => states.established += 1,
+                            0x02 => states.syn_sent += 1,
+                            0x03 => states.syn_recv += 1,
+                            0x04 => states.fin_wait1 += 1,
+                            0x05 => states.fin_wait2 += 1,
+                            0x06 => states.time_wait += 1,
+                            0x07 => states.close += 1,
+                            0x08 => states.close_wait += 1,
+                            0x09 => states.last_ack += 1,
+                            0x0A => states.listen += 1,
+                            0x0B => states.closing += 1,
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+        
+        if let Ok(content) = fs::read_to_string("/proc/net/tcp6") {
+            for line in content.lines().skip(1) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 4 {
+                    if let Ok(state) = u8::from_str_radix(parts[3], 16) {
+                        match state {
+                            0x01 => states.established += 1,
+                            0x02 => states.syn_sent += 1,
+                            0x03 => states.syn_recv += 1,
+                            0x04 => states.fin_wait1 += 1,
+                            0x05 => states.fin_wait2 += 1,
+                            0x06 => states.time_wait += 1,
+                            0x07 => states.close += 1,
+                            0x08 => states.close_wait += 1,
+                            0x09 => states.last_ack += 1,
+                            0x0A => states.listen += 1,
+                            0x0B => states.closing += 1,
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+        
+        states.total = states.established + states.syn_sent + states.syn_recv +
+                       states.fin_wait1 + states.fin_wait2 + states.time_wait +
+                       states.close + states.close_wait + states.last_ack +
+                       states.listen + states.closing;
+        
+        states
+    }
+
+    fn collect_udp_endpoints(&self) -> UdpEndpoints {
+        let mut endpoints = UdpEndpoints::default();
+        let mut local_endpoints: Vec<UdpEndpoint> = Vec::new();
+        
+        if let Ok(content) = fs::read_to_string("/proc/net/udp") {
+            for line in content.lines().skip(1) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 10 {
+                    let local_addr = parts[1].to_string();
+                    let inode = parts[9].parse().unwrap_or(0);
+                    endpoints.total += 1;
+                    local_endpoints.push(UdpEndpoint { local_addr, inode });
+                }
+            }
+        }
+        
+        if let Ok(content) = fs::read_to_string("/proc/net/udp6") {
+            for line in content.lines().skip(1) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 10 {
+                    let local_addr = parts[1].to_string();
+                    let inode = parts[9].parse().unwrap_or(0);
+                    endpoints.total += 1;
+                    local_endpoints.push(UdpEndpoint { local_addr, inode });
+                }
+            }
+        }
+        
+        endpoints.local_endpoints = local_endpoints;
+        endpoints
+    }
+
+    fn collect_listening_ports(&self) -> Vec<ListeningPort> {
+        let mut ports = Vec::new();
+        let mut pid_port_map: HashMap<u64, (u16, String)> = HashMap::new();
+        
+        if let Ok(content) = fs::read_to_string("/proc/net/tcp") {
+            for line in content.lines().skip(1) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 4 {
+                    if let Ok(state) = u8::from_str_radix(parts[3], 16) {
+                        if state == 0x0A {
+                            if let Ok(inode) = parts[9].parse::<u64>() {
+                                let local = &parts[1];
+                                let port = Self::parse_hex_port(local);
+                                let protocol = "tcp4".to_string();
+                                pid_port_map.insert(inode, (port, protocol));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        if let Ok(content) = fs::read_to_string("/proc/net/udp") {
+            for line in content.lines().skip(1) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 10 {
+                    if let Ok(inode) = parts[9].parse::<u64>() {
+                        let local = &parts[1];
+                        let port = Self::parse_hex_port(local);
+                        let protocol = "udp4".to_string();
+                        pid_port_map.insert(inode, (port, protocol));
+                    }
+                }
+            }
+        }
+        
+        let process_map = self.get_process_for_inode();
+        
+        for (inode, (port, protocol)) in pid_port_map {
+            let (process_name, pid) = process_map.get(&inode)
+                .cloned()
+                .unwrap_or((None, None));
+            ports.push(ListeningPort {
+                port,
+                protocol,
+                process_name,
+                pid,
+            });
+        }
+        
+        ports.sort_by(|a, b| a.port.cmp(&b.port));
+        ports.dedup_by(|a, b| a.port == b.port && a.protocol == b.protocol);
+        ports
+    }
+
+    fn parse_hex_port(local: &str) -> u16 {
+        if let Some((_, port_str)) = local.rsplit_once(':') {
+            u16::from_str_radix(port_str, 16).unwrap_or(0)
+        } else {
+            0
+        }
+    }
+
+    fn collect_established_connections(&self) -> Vec<ConnectionInfo> {
+        let mut connections = Vec::new();
+        let process_map = self.get_process_for_inode();
+        
+        let state_names: HashMap<u8, &'static str> = [
+            (0x01, "ESTABLISHED"),
+            (0x02, "SYN_SENT"),
+            (0x03, "SYN_RECV"),
+            (0x04, "FIN_WAIT1"),
+            (0x05, "FIN_WAIT2"),
+            (0x06, "TIME_WAIT"),
+            (0x07, "CLOSE"),
+            (0x08, "CLOSE_WAIT"),
+            (0x09, "LAST_ACK"),
+            (0x0A, "LISTEN"),
+            (0x0B, "CLOSING"),
+        ].iter().cloned().collect();
+        
+        if let Ok(content) = fs::read_to_string("/proc/net/tcp") {
+            for line in content.lines().skip(1) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 10 {
+                    if let Ok(state) = u8::from_str_radix(parts[3], 16) {
+                        let state_name = state_names.get(&state).unwrap_or(&"UNKNOWN");
+                        if state == 0x01 {
+                            if let Ok(inode) = parts[9].parse::<u64>() {
+                                let local = Self::format_socket_address(&parts[1]);
+                                let remote = Self::format_socket_address(&parts[2]);
+                                let (process_name, pid) = process_map.get(&inode)
+                                    .cloned()
+                                    .unwrap_or((None, None));
+                                connections.push(ConnectionInfo {
+                                    protocol: "tcp".to_string(),
+                                    local_addr: local,
+                                    remote_addr: remote,
+                                    state: state_name.to_string(),
+                                    pid,
+                                    process_name,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        connections
+    }
+
+    fn format_socket_address(hex_addr: &str) -> String {
+        let parts: Vec<&str> = hex_addr.split(':').collect();
+        if parts.len() < 2 {
+            return hex_addr.to_string();
+        }
+        
+        let port = u16::from_str_radix(parts.last().unwrap_or(&"0"), 16).unwrap_or(0);
+        
+        let addr_hex = parts[0];
+        if addr_hex.len() == 8 {
+            let ip = format!("{}.{}.{}.{}",
+                u8::from_str_radix(&addr_hex[6..8], 16).unwrap_or(0),
+                u8::from_str_radix(&addr_hex[4..6], 16).unwrap_or(0),
+                u8::from_str_radix(&addr_hex[2..4], 16).unwrap_or(0),
+                u8::from_str_radix(&addr_hex[0..2], 16).unwrap_or(0),
+            );
+            return format!("{}:{}", ip, port);
+        }
+        
+        format!("{}:{}", hex_addr, port)
+    }
+
+    fn get_process_for_inode(&self) -> HashMap<u64, (Option<String>, Option<u32>)> {
+        let mut map = HashMap::new();
+        
+        if let Ok(fd_dir) = fs::read_dir("/proc") {
+            for entry in fd_dir.flatten() {
+                let path = entry.path();
+                if let Some(name) = path.file_name() {
+                    if let Ok(pid) = name.to_string_lossy().parse::<u32>() {
+                        let fd_path = path.join("fd");
+                        if let Ok(fd_entries) = fs::read_dir(&fd_path) {
+                            for fd_entry in fd_entries.flatten() {
+                                if let Ok(link) = fs::read_link(fd_entry.path()) {
+                                    let link_str = link.to_string_lossy();
+                                    if link_str.starts_with("socket:[") {
+                                        if let Some(inode_str) = link_str.strip_prefix("socket:[").and_then(|s| s.strip_suffix(']')) {
+                                            if let Ok(inode) = inode_str.parse::<u64>() {
+                                                let proc_name = self.get_process_name(pid);
+                                                map.insert(inode, (Some(proc_name), Some(pid)));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        map
+    }
+
+    fn get_process_name(&self, pid: u32) -> String {
+        fs::read_to_string(format!("/proc/{}/comm", pid))
+            .ok()
+            .map(|s| s.trim().to_string())
+            .unwrap_or_else(|| "unknown".to_string())
+    }
+
+    fn collect_bandwidth_total(&self) -> BandwidthTotal {
+        let mut rx_bytes: u64 = 0;
+        let mut tx_bytes: u64 = 0;
+        let mut rx_packets: u64 = 0;
+        let mut tx_packets: u64 = 0;
+        
+        if let Ok(content) = fs::read_to_string("/proc/net/dev") {
+            for line in content.lines().skip(2) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 10 {
+                    rx_bytes += parts[1].parse().unwrap_or(0);
+                    tx_bytes += parts[9].parse().unwrap_or(0);
+                    rx_packets += parts[2].parse().unwrap_or(0);
+                    tx_packets += parts[10].parse().unwrap_or(0);
+                }
+            }
+        }
+        
+        BandwidthTotal {
+            rx_bytes,
+            tx_bytes,
+            rx_packets,
+            tx_packets,
+        }
+    }
+
+    fn collect_packet_counts(&self) -> PacketCounts {
+        let mut rx_packets: u64 = 0;
+        let mut tx_packets: u64 = 0;
+        let mut rx_errors: u64 = 0;
+        let mut tx_errors: u64 = 0;
+        let mut rx_dropped: u64 = 0;
+        let mut tx_dropped: u64 = 0;
+        let mut multicast: u64 = 0;
+        let mut collisions: u64 = 0;
+        
+        if let Ok(content) = fs::read_to_string("/proc/net/dev") {
+            for line in content.lines().skip(2) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 16 {
+                    rx_packets += parts[2].parse().unwrap_or(0);
+                    tx_packets += parts[10].parse().unwrap_or(0);
+                    rx_errors += parts[3].parse().unwrap_or(0);
+                    tx_errors += parts[11].parse().unwrap_or(0);
+                    rx_dropped += parts[4].parse().unwrap_or(0);
+                    tx_dropped += parts[12].parse().unwrap_or(0);
+                    multicast += parts[8].parse().unwrap_or(0);
+                    collisions += parts[14].parse().unwrap_or(0);
+                }
+            }
+        }
+        
+        PacketCounts {
+            rx_packets,
+            tx_packets,
+            rx_errors,
+            tx_errors,
+            rx_dropped,
+            tx_dropped,
+            multicast,
+            collisions,
+        }
+    }
+
+    fn collect_error_counts(&self) -> ErrorCounts {
+        ErrorCounts::default()
+    }
+
+    fn collect_interface_duplex(&self) -> HashMap<String, DuplexInfo> {
+        let mut duplex_map = HashMap::new();
+        
+        if let Ok(paths) = fs::read_dir("/sys/class/net") {
+            for path in paths.flatten() {
+                let name = path.file_name().to_string_lossy().to_string();
+                let dev_path = path.path();
+                
+                let speed: u32 = fs::read_to_string(dev_path.join("speed"))
+                    .ok()
+                    .and_then(|s| s.trim().parse().ok())
+                    .unwrap_or(0);
+                
+                let duplex = fs::read_to_string(dev_path.join("duplex"))
+                    .ok()
+                    .map(|s| s.trim().to_string())
+                    .unwrap_or_else(|| "unknown".to_string());
+                
+                let autoneg = fs::read_to_string(dev_path.join("autoneg"))
+                    .ok()
+                    .map(|s| s.trim().to_string())
+                    .unwrap_or_else(|| "unknown".to_string());
+                
+                if speed > 0 || duplex != "unknown" {
+                    duplex_map.insert(name, DuplexInfo {
+                        duplex,
+                        speed,
+                        autoneg,
+                    });
+                }
+            }
+        }
+        
+        duplex_map
+    }
+
+    fn collect_wireless_info(&self) -> Vec<WirelessInfo> {
+        Vec::new()
+    }
+
+    fn collect_cellular_info(&self) -> Vec<CellularInfo> {
+        Vec::new()
+    }
+
+    fn collect_dns_stats(&self) -> Option<DnsStats> {
+        None
+    }
+
+    fn collect_routing_table(&self) -> Vec<RouteEntry> {
+        let mut routes = Vec::new();
+        
+        if let Ok(content) = fs::read_to_string("/proc/net/route") {
+            for line in content.lines().skip(1) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 10 {
+                    routes.push(RouteEntry {
+                        destination: parts[0].to_string(),
+                        gateway: parts[1].to_string(),
+                        genmask: parts[2].to_string(),
+                        flags: parts[3].to_string(),
+                        metric: parts[6].parse().unwrap_or(0),
+                        interface: parts[9].to_string(),
+                    });
+                }
+            }
+        }
+        
+        routes
+    }
+
+    fn collect_arp_table(&self) -> Vec<ArpEntry> {
+        let mut arp_entries = Vec::new();
+        
+        if let Ok(content) = fs::read_to_string("/proc/net/arp") {
+            for line in content.lines().skip(1) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 6 {
+                    arp_entries.push(ArpEntry {
+                        ip_address: parts[0].to_string(),
+                        hw_address: parts[3].to_string(),
+                        flags: parts[2].to_string(),
+                        device: parts[5].to_string(),
+                    });
+                }
+            }
+        }
+        
+        arp_entries
+    }
+
+    fn collect_network_namespaces(&self) -> Vec<NetworkNamespace> {
+        let mut namespaces = Vec::new();
+        
+        if let Ok(paths) = fs::read_dir("/var/run/netns") {
+            for path in paths.flatten() {
+                let name = path.file_name().to_string_lossy().to_string();
+                namespaces.push(NetworkNamespace {
+                    name,
+                    interfaces: Vec::new(),
+                });
+            }
+        }
+        
+        namespaces
+    }
+
+    fn collect_socket_stats(&self) -> SocketStats {
+        let mut stats = SocketStats::default();
+        
+        if let Ok(content) = fs::read_to_string("/proc/net/sockstat") {
+            for line in content.lines() {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if line.starts_with("sockets:") && parts.len() >= 3 {
+                    stats.used = parts[2].parse().unwrap_or(0);
+                }
+                if line.starts_with("TCP:") && parts.len() >= 7 {
+                    stats.tcp_alloc = parts[2].parse().unwrap_or(0);
+                    stats.tcp_orphan = parts[4].parse().unwrap_or(0);
+                    stats.tcp_tw = parts[6].parse().unwrap_or(0);
+                }
+            }
+        }
+        
+        stats
+    }
+
+    fn collect_connection_limits(&self) -> ConnectionLimits {
+        let mut limits = ConnectionLimits::default();
+        
+        limits.max_files = fs::read_to_string("/proc/sys/fs/file-max")
+            .ok()
+            .and_then(|s| s.trim().parse().ok())
+            .unwrap_or(0);
+        
+        limits.used_files = fs::read_to_string("/proc/sys/fs/file-nr")
+            .ok()
+            .map(|s| {
+                let parts: Vec<&str> = s.split_whitespace().collect();
+                parts.first().and_then(|p| p.parse().ok()).unwrap_or(0)
+            })
+            .unwrap_or(0);
+        
+        limits.max_sockets = fs::read_to_string("/proc/sys/net/core/somaxconn")
+            .ok()
+            .and_then(|s| s.trim().parse().ok())
+            .unwrap_or(0);
+        
+        limits
     }
 }

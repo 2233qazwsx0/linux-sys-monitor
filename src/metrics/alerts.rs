@@ -12,7 +12,7 @@ pub async fn send_email_alert(config: &EmailConfig, subject: &str, body: &str) -
         body
     );
     
-    let encoded = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, mail_body.as_bytes());
+    let encoded = encode_base64(mail_body.as_bytes());
     
     let body_json = serde_json::json!({
         "raw": encoded
@@ -28,7 +28,7 @@ pub async fn send_email_alert(config: &EmailConfig, subject: &str, body: &str) -
     Ok(())
 }
 
-pub async fn send_webhook_notification(config: &WebhookConfig, payload: &HashMap<String, serde_json::Value>) -> Result<(), String> {
+pub async fn send_webhook_notification(config: &WebhookConfig, payload: &std::collections::HashMap<String, serde_json::Value>) -> Result<(), String> {
     let client = reqwest::Client::new();
     
     let mut request = client.post(&config.url);
@@ -57,15 +57,15 @@ pub async fn send_webhook_notification(config: &WebhookConfig, payload: &HashMap
 pub async fn send_slack_notification(config: &SlackConfig, message: &str) -> Result<(), String> {
     let client = reqwest::Client::new();
     
-    let mut payload = HashMap::new();
-    payload.insert("text", message.to_string());
+    let mut payload: std::collections::HashMap<String, serde_json::Value> = std::collections::HashMap::new();
+    payload.insert("text".to_string(), serde_json::json!(message));
     
     if let Some(ref channel) = config.channel {
-        payload.insert("channel", serde_json::json!(channel));
+        payload.insert("channel".to_string(), serde_json::json!(channel));
     }
     
     if let Some(ref username) = config.username {
-        payload.insert("username", serde_json::json!(username));
+        payload.insert("username".to_string(), serde_json::json!(username));
     }
     
     client.post(&config.webhook_url)
@@ -214,48 +214,24 @@ pub async fn send_all_notifications(
     results
 }
 
-mod base64 {
-    pub struct Engine;
+fn encode_base64(input: &[u8]) -> String {
+    const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     
-    impl Engine {
-        pub fn encode<E: Encoder>(encoding: &E, input: &[u8]) -> String {
-            encoding.encode(input)
+    let mut result = String::new();
+    for chunk in input.chunks(3) {
+        let mut n: u32 = 0;
+        for (i, &byte) in chunk.iter().enumerate() {
+            n |= (byte as u32) << (16 - i * 8);
+        }
+        
+        let chars_to_emit = chunk.len() + 1;
+        for i in 0..chars_to_emit {
+            let idx = ((n >> (18 - i * 6)) & 0x3F) as usize;
+            result.push(CHARS[idx] as char);
+        }
+        for _ in chars_to_emit..4 {
+            result.push('=');
         }
     }
-    
-    pub trait Encoder: Send + Sync {
-        fn encode(&self, input: &[u8]) -> String;
-    }
-    
-    pub mod general_purpose {
-        use super::*;
-        
-        pub static STANDARD: StandardEncoder = StandardEncoder;
-        
-        pub struct StandardEncoder;
-        
-        impl Encoder for StandardEncoder {
-            fn encode(&self, input: &[u8]) -> String {
-                const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-                
-                let mut result = String::new();
-                for chunk in input.chunks(3) {
-                    let mut n: u32 = 0;
-                    for (i, &byte) in chunk.iter().enumerate() {
-                        n |= (byte as u32) << (16 - i * 8);
-                    }
-                    
-                    let chars_to_emit = chunk.len() + 1;
-                    for i in 0..chars_to_emit {
-                        let idx = ((n >> (18 - i * 6)) & 0x3F) as usize;
-                        result.push(CHARS[idx] as char);
-                    }
-                    for _ in chars_to_emit..4 {
-                        result.push('=');
-                    }
-                }
-                result
-            }
-        }
-    }
+    result
 }

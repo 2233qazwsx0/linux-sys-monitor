@@ -3,7 +3,7 @@ pub mod http;
 use axum::{
     extract::ws::WebSocketUpgrade,
     extract::State,
-    response::{Html, IntoResponse},
+    response::Html,
     Json,
     routing::{get, post},
     Router,
@@ -21,7 +21,6 @@ use crate::metrics::{
 use crate::metrics::export;
 use crate::metrics::analysis;
 use crate::metrics::scheduling;
-use crate::metrics::storage;
 
 #[derive(Clone)]
 pub struct SharedState {
@@ -110,6 +109,84 @@ pub struct CompareQuery {
 
 pub async fn health_check() -> &'static str {
     "OK"
+}
+
+#[derive(Debug, Deserialize)]
+pub struct KillRequest {
+    pub pid: u32,
+    pub signal: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct KillResponse {
+    pub success: bool,
+    pub message: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SignalInfo {
+    pub name: String,
+    pub value: i32,
+}
+
+pub async fn get_signals() -> Json<Vec<SignalInfo>> {
+    let signals = vec![
+        SignalInfo { name: "SIGTERM".to_string(), value: 15 },
+        SignalInfo { name: "SIGKILL".to_string(), value: 9 },
+        SignalInfo { name: "SIGINT".to_string(), value: 2 },
+        SignalInfo { name: "SIGSTOP".to_string(), value: 19 },
+        SignalInfo { name: "SIGCONT".to_string(), value: 18 },
+        SignalInfo { name: "SIGHUP".to_string(), value: 1 },
+        SignalInfo { name: "SIGUSR1".to_string(), value: 10 },
+        SignalInfo { name: "SIGUSR2".to_string(), value: 12 },
+        SignalInfo { name: "SIGPIPE".to_string(), value: 13 },
+        SignalInfo { name: "SIGALRM".to_string(), value: 14 },
+    ];
+    Json(signals)
+}
+
+pub async fn kill_process(
+    Json(req): Json<KillRequest>,
+) -> Json<KillResponse> {
+    use std::process::Command;
+    
+    let signal_num = match req.signal.to_uppercase().as_str() {
+        "SIGTERM" | "15" | "TERM" => 15,
+        "SIGKILL" | "9" | "KILL" => 9,
+        "SIGINT" | "2" | "INT" => 2,
+        "SIGSTOP" | "19" | "STOP" => 19,
+        "SIGCONT" | "18" | "CONT" => 18,
+        "SIGHUP" | "1" | "HUP" => 1,
+        "SIGUSR1" | "10" | "USR1" => 10,
+        "SIGUSR2" | "12" | "USR2" => 12,
+        "SIGPIPE" | "13" | "PIPE" => 13,
+        "SIGALRM" | "14" | "ALRM" => 14,
+        _ => {
+            return Json(KillResponse {
+                success: false,
+                message: format!("Unknown signal: {}", req.signal),
+            });
+        }
+    };
+    
+    let output = Command::new("kill")
+        .args(["-s", &signal_num.to_string(), &req.pid.to_string()])
+        .output();
+    
+    match output {
+        Ok(out) if out.status.success() => Json(KillResponse {
+            success: true,
+            message: format!("Signal {} sent to process {}", signal_num, req.pid),
+        }),
+        Ok(out) => Json(KillResponse {
+            success: false,
+            message: format!("Failed to send signal: {}", String::from_utf8_lossy(&out.stderr)),
+        }),
+        Err(e) => Json(KillResponse {
+            success: false,
+            message: format!("Error executing kill command: {}", e),
+        }),
+    }
 }
 
 pub async fn get_history(
@@ -345,15 +422,16 @@ pub async fn create_scheduled_export(
     Json(export): Json<ScheduledExport>,
 ) -> Json<ApiResponse<ScheduledExport>> {
     let id = scheduling::generate_export_id();
+    let cron_expr = export.cron_expression.clone();
     let new_export = ScheduledExport {
         id: id.clone(),
         name: export.name,
         format: export.format,
-        cron_expression: export.cron_expression,
+        cron_expression: cron_expr.clone(),
         enabled: export.enabled,
         destination: export.destination,
         last_run: None,
-        next_run: scheduling::parse_cron_next_run(&export.cron_expression, chrono::Utc::now().timestamp()),
+        next_run: scheduling::parse_cron_next_run(&cron_expr, chrono::Utc::now().timestamp()),
     };
     
     if let Err(e) = scheduling::validate_export_config(&new_export) {
@@ -415,20 +493,24 @@ pub async fn send_email_alert(
     Json(alert_data): Json<serde_json::Value>,
 ) -> Json<ApiResponse<String>> {
     let config = state.notification_config.lock().unwrap().clone();
-    if let Some(ref email_config) = config.email {
-        let subject = alert_data.get("subject")
-            .and_then(|v| v.as_str())
-            .unwrap_or("System Monitor Alert");
-        let body = alert_data.get("body")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        
-        match crate::metrics::alerts::send_email_alert(email_config, subject, body).await {
-            Ok(_) => Json(ApiResponse::success("Email sent successfully".to_string())),
-            Err(e) => Json(ApiResponse::error(&e)),
+    if let Some(ref notification_config) = config {
+        if let Some(ref email_config) = notification_config.email {
+            let subject = alert_data.get("subject")
+                .and_then(|v| v.as_str())
+                .unwrap_or("System Monitor Alert");
+            let body = alert_data.get("body")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            
+            match crate::metrics::alerts::send_email_alert(email_config, subject, body).await {
+                Ok(_) => Json(ApiResponse::success("Email sent successfully".to_string())),
+                Err(e) => Json(ApiResponse::error(&e)),
+            }
+        } else {
+            Json(ApiResponse::error("Email configuration not set"))
         }
     } else {
-        Json(ApiResponse::error("Email configuration not set"))
+        Json(ApiResponse::error("Notification configuration not set"))
     }
 }
 
@@ -437,18 +519,22 @@ pub async fn send_webhook_alert(
     Json(payload): Json<serde_json::Value>,
 ) -> Json<ApiResponse<String>> {
     let config = state.notification_config.lock().unwrap().clone();
-    if let Some(ref webhook_config) = config.webhook {
-        let mut map = std::collections::HashMap::new();
-        if let Ok(obj) = serde_json::from_value(payload.clone()) {
-            map = obj;
-        }
-        
-        match crate::metrics::alerts::send_webhook_notification(webhook_config, &map).await {
-            Ok(_) => Json(ApiResponse::success("Webhook sent successfully".to_string())),
-            Err(e) => Json(ApiResponse::error(&e)),
+    if let Some(ref notification_config) = config {
+        if let Some(ref webhook_config) = notification_config.webhook {
+            let mut map = std::collections::HashMap::new();
+            if let Ok(obj) = serde_json::from_value(payload.clone()) {
+                map = obj;
+            }
+            
+            match crate::metrics::alerts::send_webhook_notification(webhook_config, &map).await {
+                Ok(_) => Json(ApiResponse::success("Webhook sent successfully".to_string())),
+                Err(e) => Json(ApiResponse::error(&e)),
+            }
+        } else {
+            Json(ApiResponse::error("Webhook configuration not set"))
         }
     } else {
-        Json(ApiResponse::error("Webhook configuration not set"))
+        Json(ApiResponse::error("Notification configuration not set"))
     }
 }
 
@@ -457,17 +543,21 @@ pub async fn send_slack_alert(
     Json(message_data): Json<serde_json::Value>,
 ) -> Json<ApiResponse<String>> {
     let config = state.notification_config.lock().unwrap().clone();
-    if let Some(ref slack_config) = config.slack {
-        let message = message_data.get("message")
-            .and_then(|v| v.as_str())
-            .unwrap_or("System Monitor Alert");
-        
-        match crate::metrics::alerts::send_slack_notification(slack_config, message).await {
-            Ok(_) => Json(ApiResponse::success("Slack message sent successfully".to_string())),
-            Err(e) => Json(ApiResponse::error(&e)),
+    if let Some(ref notification_config) = config {
+        if let Some(ref slack_config) = notification_config.slack {
+            let message = message_data.get("message")
+                .and_then(|v| v.as_str())
+                .unwrap_or("System Monitor Alert");
+            
+            match crate::metrics::alerts::send_slack_notification(slack_config, message).await {
+                Ok(_) => Json(ApiResponse::success("Slack message sent successfully".to_string())),
+                Err(e) => Json(ApiResponse::error(&e)),
+            }
+        } else {
+            Json(ApiResponse::error("Slack configuration not set"))
         }
     } else {
-        Json(ApiResponse::error("Slack configuration not set"))
+        Json(ApiResponse::error("Notification configuration not set"))
     }
 }
 
@@ -476,17 +566,21 @@ pub async fn send_telegram_alert(
     Json(message_data): Json<serde_json::Value>,
 ) -> Json<ApiResponse<String>> {
     let config = state.notification_config.lock().unwrap().clone();
-    if let Some(ref telegram_config) = config.telegram {
-        let message = message_data.get("message")
-            .and_then(|v| v.as_str())
-            .unwrap_or("System Monitor Alert");
-        
-        match crate::metrics::alerts::send_telegram_notification(telegram_config, message).await {
-            Ok(_) => Json(ApiResponse::success("Telegram message sent successfully".to_string())),
-            Err(e) => Json(ApiResponse::error(&e)),
+    if let Some(ref notification_config) = config {
+        if let Some(ref telegram_config) = notification_config.telegram {
+            let message = message_data.get("message")
+                .and_then(|v| v.as_str())
+                .unwrap_or("System Monitor Alert");
+            
+            match crate::metrics::alerts::send_telegram_notification(telegram_config, message).await {
+                Ok(_) => Json(ApiResponse::success("Telegram message sent successfully".to_string())),
+                Err(e) => Json(ApiResponse::error(&e)),
+            }
+        } else {
+            Json(ApiResponse::error("Telegram configuration not set"))
         }
     } else {
-        Json(ApiResponse::error("Telegram configuration not set"))
+        Json(ApiResponse::error("Notification configuration not set"))
     }
 }
 
@@ -551,6 +645,8 @@ pub async fn serve_frontend() -> Html<String> {
 }
 
 pub fn create_router(state: Arc<SharedState>) -> Router {
+    use axum::routing::{get, post, put, delete};
+    
     Router::new()
         .route("/", get(serve_frontend))
         .route("/health", get(health_check))

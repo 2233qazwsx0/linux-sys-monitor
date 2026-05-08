@@ -6,7 +6,12 @@ pub mod alerts;
 pub mod scheduling;
 pub mod storage;
 
-pub use collector::{SystemMetrics, MetricsCollector};
+pub use collector::{
+    SystemMetrics, MetricsCollector, NetworkDetails, NetworkInterface, TcpStates,
+    UdpEndpoints, ListeningPort, ConnectionInfo, BandwidthTotal, PacketCounts,
+    ErrorCounts, DuplexInfo, WirelessInfo, CellularInfo, DnsStats, RouteEntry,
+    ArpEntry, NetworkNamespace, SocketStats, ConnectionLimits, UdpEndpoint,
+};
 pub use ring_buffer::RingBuffer;
 
 use serde::{Deserialize, Serialize};
