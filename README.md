@@ -1,29 +1,48 @@
 # 📊 System Monitor
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Rust-1.75+-orange.svg" alt="Rust">
-  <img src="https://img.shields.io/badge/Vue-3.4-green.svg" alt="Vue">
-  <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20Windows-blue.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
-  <img src="https://img.shields.io/github/stars/2233qazwsx0/linux-sys-monitor?style=social" alt="Stars">
-  <img src="https://img.shields.io/badge/Version-2.0.0-6366f1.svg" alt="Version">
+  <a href="https://github.com/2233qazwsx0/linux-sys-monitor/releases">
+    <img src="https://img.shields.io/badge/Version-2.1.0-6366f1?style=flat-square" alt="Version">
+  </a>
+  <a href="https://github.com/2233qazwsx0/linux-sys-monitor/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License">
+  </a>
+  <a href="https://github.com/2233qazwsx0/linux-sys-monitor/stargazers">
+    <img src="https://img.shields.io/github/stars/2233qazwsx0/linux-sys-monitor?style=flat-square" alt="Stars">
+  </a>
+  <a href="https://github.com/2233qazwsx0/linux-sys-monitor/network/members">
+    <img src="https://img.shields.io/github/forks/2233qazwsx0/linux-sys-monitor?style=flat-square" alt="Forks">
+  </a>
 </p>
 
-一款支持 **Linux** 和 **Windows** 的实时系统监控仪表板。监控 CPU、内存、磁盘 I/O、网络流量和进程 - 所有功能都在一个时尚的暗色主题界面中。
+<p align="center">
+  <img src="https://img.shields.io/badge/Rust-1.75+-orange?style=flat-square&logo=rust" alt="Rust">
+  <img src="https://img.shields.io/badge/Vue-3.4-green?style=flat-square&logo=vue.js" alt="Vue">
+  <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20Windows-blue?style=flat-square" alt="Platform">
+</p>
 
-## ✨ 功能特性
+<p align="center">
+  🌍 中文 | <a href="README.md">English</a>
+</p>
 
-- 📊 **实时 CPU 监控** - 总体使用率和每核心统计
-- 💾 **内存使用追踪** - 已用/可用/百分比，带可视化条
-- 📈 **磁盘 I/O 监控** - 读写速率（字节/秒）
-- 🌐 **网络流量** - 下载/上传速度追踪
-- 📋 **进程列表** - 按 CPU 使用率排序的 Top 进程
-- 🔄 **WebSocket 实时推送** - 每秒更新
-- 🎨 **精美暗色主题** - 现代响应式界面
-- 🌍 **中英文支持** - 自动检测浏览器语言
-- 📱 **移动端适配** - 响应式设计
-- 🐳 **Docker 支持** - 一键容器部署
-- 🪟 **Windows 支持** - 原生 Windows 安装器
+---
+
+一款**超轻量级**的实时系统监控工具，支持 Linux 和 Windows。零依赖部署，一键安装，内存占用不到 10MB！
+
+## ✨ 特性
+
+| 特性 | 说明 |
+|------|------|
+| 📊 **实时监控** | CPU、内存、Swap 每秒更新 |
+| 💾 **磁盘监控** | I/O 读写速率 + 各分区空间 |
+| 🌐 **网络监控** | 下载/上传速度实时追踪 |
+| 🔋 **电池状态** | 笔记本电池电量（支持自动检测）|
+| 📋 **进程列表** | Top 15 进程按 CPU 排序 |
+| 🎨 **暗色主题** | 现代化 UI 设计 |
+| 🌍 **中英双语** | 自动检测浏览器语言 |
+| 📱 **响应式** | 完美适配桌面和移动端 |
+| 🐳 **Docker** | 一行命令启动 |
+| 🪟 **Windows** | 原生 PowerShell 安装器 |
 
 ## 🚀 快速开始
 
@@ -33,54 +52,190 @@
 curl -sSL https://raw.githubusercontent.com/2233qazwsx0/linux-sys-monitor/main/setup.sh | bash
 ```
 
-### Windows PowerShell 安装
+### Windows PowerShell
 
 ```powershell
+# 以管理员身份运行
 irm https://raw.githubusercontent.com/2233qazwsx0/linux-sys-monitor/main/install-windows.ps1 | iex
 ```
 
-### Docker 部署
+### Docker
 
 ```bash
+git clone https://github.com/2233qazwsx0/linux-sys-monitor.git
+cd linux-sys-monitor
 docker-compose up -d
 ```
 
-然后打开 http://localhost:8080
+### 直接下载
 
-## 🏗️ 技术架构
+从 [Releases](https://github.com/2233qazwsx0/linux-sys-monitor/releases/latest) 下载预编译二进制：
+
+```bash
+wget https://github.com/2233qazwsx0/linux-sys-monitor/releases/download/v2.1.0/linux-system-monitor-v2.1.0-linux-x86_64.tar.gz
+tar -xzf linux-system-monitor-*.tar.gz
+./linux-system-monitor
+```
+
+然后打开 **http://localhost:8080**
+
+## 📷 截图
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                      Browser                            │
-│  ┌─────────────────────────────────────────────────┐  │
-│  │           Vue.js + ECharts UI                    │  │
-│  └─────────────────────────────────────────────────┘  │
-│                         ▲                               │
-│                         │ WebSocket                     │
-└─────────────────────────┼───────────────────────────────┘
-                          │
-┌─────────────────────────┼───────────────────────────────┐
-│                    Rust Server                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
-│  │   Axum HTTP │  │   WebSocket  │  │   Metrics     │   │
-│  │   Server    │  │   Handler    │  │   Collector   │   │
-│  └──────────────┘  └──────────────┘  └──────────────┘   │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  📊 系统监控                    ubuntu  Live ●  [EN ▼]    │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐    │
+│  │ ⚡ CPU    │ │ 🧠 内存   │ │ 💿 Swap  │ │ 💾 磁盘I/O│    │
+│  │  25.3%   │ │  62.1%   │ │   0.0%   │ │ ↓1.2MB/s │    │
+│  │ ████░░░░ │ │ ██████░░ │ │ ░░░░░░░░ │ │ ↑256KB/s │    │
+│  │ 4核 25%  │ │ 8G/16G   │ │ 0G/2G    │ │           │    │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘    │
+│                                                             │
+│  💿 磁盘空间                                                │
+│  ┌─────────────────┐ ┌─────────────────┐                   │
+│  │ /dev/sda1  /   │ │ /dev/sda2  /home│                   │
+│  │ ████████░░ 78% │ │ ████░░░░░ 45%  │                   │
+│  │ 312G / 400G    │ │ 450G / 1TB     │                   │
+│  └─────────────────┘ └─────────────────┘                   │
+│                                                             │
+│  ┌──────────────────┐ ┌──────────────────┐                 │
+│  │ CPU 使用率         │ │ 内存使用率         │                 │
+│  │ ▁▂▃▄▅▆▇█▇▆▅▄▃▂▁ │ │ ▁▁▂▂▃▃▄▄▅▅▆▆▇▇ │                 │
+│  └──────────────────┘ └──────────────────┘                 │
+│                                                             │
+│  📋 热门进程                                                │
+│  ┌────┬────────┬────────┬────────┐                         │
+│  │ PID │ 名称    │ CPU %  │ 内存 % │                         │
+│  ├────┼────────┼────────┼────────┤                         │
+│  │1234│ chrome │  15.2  │   8.3  │                         │
+│  │5678│ code   │   8.1  │   5.2  │                         │
+│  └────┴────────┴────────┴────────┘                         │
+└─────────────────────────────────────────────────────────────┘
 ```
+
+## ⚡ 性能对比
+
+| 指标 | System Monitor | Prometheus | Grafana |
+|------|---------------|------------|---------|
+| 二进制大小 | **1.4 MB** | ~120 MB | ~300 MB |
+| 内存占用 | **< 10 MB** | ~200 MB | ~500 MB |
+| 启动时间 | **< 1s** | ~5s | ~10s |
+| 依赖 | 0 | 需要多服务 | 需要多服务 |
 
 ## 🛠️ 技术栈
 
-- **后端:** Rust, Axum, Tokio, sysinfo
-- **前端:** Vue 3, ECharts, Vite
-- **实时:** WebSocket
-- **容器:** Docker
+```
+Frontend   Vue 3 + ECharts + Vite
+Backend    Rust + Axum + Tokio
+Metrics    sysinfo crate
+Protocol   WebSocket
+```
 
-## 📝 许可证
+## 📦 环境变量
 
-MIT License
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `MONITOR_PORT` | `8080` | 服务端口 |
+| `MONITOR_HOME` | `~/linux-system-monitor` | 安装目录 |
+| `RUST_LOG` | `info` | 日志级别 |
+
+## 🌐 API 接口
+
+### WebSocket 实时数据
+
+```
+ws://localhost:8080/ws
+```
+
+数据格式：
+```json
+{
+  "timestamp": 1700000000,
+  "uptime": 86400,
+  "hostname": "ubuntu",
+  "os_version": "Ubuntu 22.04",
+  "kernel": "5.15.0",
+  "cpu": {
+    "name": "Intel i7-12700K",
+    "usage": 25.3,
+    "core_count": 12,
+    "per_core": [20.0, 30.0, ...],
+    "frequencies": [3600, 3500, ...]
+  },
+  "memory": {
+    "total": 16777216,
+    "used": 10485760,
+    "available": 6291456,
+    "usage_percent": 62.5
+  },
+  "swap": {
+    "total": 2097152,
+    "used": 0,
+    "usage_percent": 0.0
+  },
+  "disk": {
+    "read_rate": 1048576,
+    "write_rate": 262144
+  },
+  "disks": [...],
+  "network": {
+    "rx_bytes": 5000000,
+    "tx_bytes": 2000000,
+    "rx_rate": 10240,
+    "tx_rate": 5120
+  },
+  "processes": [...],
+  "battery": null
+}
+```
+
+### REST API
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/health` | GET | 健康检查 |
+| `/api/history` | GET | 历史数据 |
+
+## 🏗️ 项目结构
+
+```
+linux-system-monitor/
+├── src/
+│   ├── main.rs           # 入口
+│   ├── api/              # HTTP/WebSocket
+│   └── metrics/          # 系统指标采集
+├── frontend/              # Vue.js 前端
+│   └── src/components/   # 图表组件
+├── Dockerfile
+├── docker-compose.yml
+├── setup.sh              # Linux 安装脚本
+└── install-windows.ps1   # Windows 安装脚本
+```
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+1. Fork 本项目
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送分支 (`git push origin feature/AmazingFeature`)
+5. 创建 Pull Request
+
+## 📄 许可证
+
+本项目基于 MIT 许可证开源 - 详见 [LICENSE](LICENSE)
+
+## ⭐ 如果对你有帮助
+
+如果这个项目对你有帮助，请给我一个 Star！
+
+[![Star History](https://api.star-history.com/svg?repos=2233qazwsx0/linux-sys-monitor&type=Timeline)](https://star-history.com/#2233qazwsx0/linux-sys-monitor&Timeline)
 
 ---
 
 <p align="center">
-  Made with ❤️ in Rust
+  用 ❤️ 和 <a href="https://www.rust-lang.org/">Rust</a> 构建
 </p>
