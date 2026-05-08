@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 
+#[derive(Clone)]
 pub struct RingBuffer<T> {
     buffer: VecDeque<T>,
     capacity: usize,

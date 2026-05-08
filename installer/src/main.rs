@@ -18,7 +18,7 @@ fn main() -> Result<()> {
 
     let install_dir = get_install_dir();
     
-    println!("{}", Style::new().yellow().apply_to("📦 Installation Directory: ") + &install_dir.display().to_string());
+    println!("{} {}", Style::new().yellow().apply_to("📦 Installation Directory:"), install_dir.display());
     println!();
 
     check_admin()?;
