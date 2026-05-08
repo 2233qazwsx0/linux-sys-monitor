@@ -134,6 +134,7 @@ impl MetricsCollector {
         let disk = self.collect_disk_io();
         let disks = self.collect_disk_info();
         let network = self.collect_network();
+        let network_details = self.collect_network_details();
         let processes = self.collect_processes();
         let battery = self.collect_battery();
         
@@ -149,6 +150,7 @@ impl MetricsCollector {
             disk,
             disks,
             network,
+            network_details,
             processes,
             battery,
         }
