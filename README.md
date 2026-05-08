@@ -64,9 +64,24 @@ irm https://raw.githubusercontent.com/2233qazwsx0/linux-sys-monitor/main/install
 
 ```bash
 git clone https://github.com/2233qazwsx0/linux-sys-monitor.git
-cd linux-sys-monitor
+cd linux-system-monitor
 docker-compose up -d
 ```
+
+### CLI 终端版本
+
+```bash
+git clone -b cli https://github.com/2233qazwsx0/linux-sys-monitor.git
+cd linux-system-monitor
+cargo build --features cli --release -p linux-system-monitor --bin cli
+./target/release/cli
+```
+
+CLI 特性：
+- 🚀 超轻量级（约 500KB）
+- 📊 实时终端显示 CPU/内存/磁盘/网络
+- 🎨 彩色终端 UI
+- ⚡ 每秒自动更新
 
 ### 直接下载
 
