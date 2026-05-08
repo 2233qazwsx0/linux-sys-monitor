@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://github.com/2233qazwsx0/linux-sys-monitor/releases">
-    <img src="https://img.shields.io/badge/Version-2.1.0-6366f1?style=flat-square" alt="Version">
+    <img src="https://img.shields.io/badge/Version-2.5.0-6366f1?style=flat-square" alt="Version">
   </a>
   <a href="https://github.com/2233qazwsx0/linux-sys-monitor/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License">
@@ -38,7 +38,9 @@
 | 🌐 **网络监控** | 下载/上传速度实时追踪 |
 | 🔋 **电池状态** | 笔记本电池电量（支持自动检测）|
 | 📋 **进程列表** | Top 15 进程按 CPU 排序 |
-| 🎨 **暗色主题** | 现代化 UI 设计 |
+| 🚨 **告警系统** | 可配置 CPU/内存告警阈值 |
+| 📤 **数据导出** | 支持 JSON/CSV 格式导出历史数据 |
+| 🎨 **主题切换** | 深色/浅色主题一键切换 |
 | 🌍 **中英双语** | 自动检测浏览器语言 |
 | 📱 **响应式** | 完美适配桌面和移动端 |
 | 🐳 **Docker** | 一行命令启动 |
@@ -55,7 +57,6 @@ curl -sSL https://raw.githubusercontent.com/2233qazwsx0/linux-sys-monitor/main/s
 ### Windows PowerShell
 
 ```powershell
-# 以管理员身份运行
 irm https://raw.githubusercontent.com/2233qazwsx0/linux-sys-monitor/main/install-windows.ps1 | iex
 ```
 
@@ -72,9 +73,9 @@ docker-compose up -d
 从 [Releases](https://github.com/2233qazwsx0/linux-sys-monitor/releases/latest) 下载预编译二进制：
 
 ```bash
-wget https://github.com/2233qazwsx0/linux-sys-monitor/releases/download/v2.1.0/linux-system-monitor-v2.1.0-linux-x86_64.tar.gz
+wget https://github.com/2233qazwsx0/linux-sys-monitor/releases/download/v2.5.0/linux-system-monitor-2.5.0-linux-x64.tar.gz
 tar -xzf linux-system-monitor-*.tar.gz
-./linux-system-monitor
+cd v2.5.0 && sudo ./install.sh
 ```
 
 然后打开 **http://localhost:8080**
@@ -92,6 +93,11 @@ tar -xzf linux-system-monitor-*.tar.gz
 │  │ ████░░░░ │ │ ██████░░ │ │ ░░░░░░░░ │ │ ↑256KB/s │    │
 │  │ 4核 25%  │ │ 8G/16G   │ │ 0G/2G    │ │           │    │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────┘    │
+│                                                             │
+│  ⚠️ 告警                                                    │
+│  ┌─────────────────────────────────────────────────────┐  │
+│  │ 🔴 CPU 使用率超过阈值: 90.0% (当前: 92.3%)         │  │
+│  └─────────────────────────────────────────────────────┘  │
 │                                                             │
 │  💿 磁盘空间                                                │
 │  ┌─────────────────┐ ┌─────────────────┐                   │
@@ -119,7 +125,7 @@ tar -xzf linux-system-monitor-*.tar.gz
 
 | 指标 | System Monitor | Prometheus | Grafana |
 |------|---------------|------------|---------|
-| 二进制大小 | **1.4 MB** | ~120 MB | ~300 MB |
+| 二进制大小 | **1.5 MB** | ~120 MB | ~300 MB |
 | 内存占用 | **< 10 MB** | ~200 MB | ~500 MB |
 | 启动时间 | **< 1s** | ~5s | ~10s |
 | 依赖 | 0 | 需要多服务 | 需要多服务 |
@@ -196,7 +202,21 @@ ws://localhost:8080/ws
 | 端点 | 方法 | 说明 |
 |------|------|------|
 | `/api/health` | GET | 健康检查 |
-| `/api/history` | GET | 历史数据 |
+| `/api/history` | GET | 历史数据 (最近1小时) |
+| `/api/alerts` | GET | 获取当前告警状态 |
+| `/api/alerts/config` | POST | 更新告警配置 |
+| `/api/export` | GET | 导出历史数据 (JSON) |
+
+### 告警配置
+
+```json
+POST /api/alerts/config
+{
+  "cpu_threshold": 90.0,
+  "memory_threshold": 85.0,
+  "disk_threshold": 95.0
+}
+```
 
 ## 🏗️ 项目结构
 
