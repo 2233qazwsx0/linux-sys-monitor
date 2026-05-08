@@ -238,11 +238,90 @@ linux-system-monitor/
 
 欢迎提交 Issue 和 Pull Request！
 
-1. Fork 本项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
+## 📱 Termux 支持
+
+本项目支持在 Android 设备上通过 Termux 运行！
+
+### 功能特性
+
+| 特性 | 说明 |
+|------|------|
+| 🔋 **电池监控** | 电量、温度、健康状态、充电状态 |
+| 🌡️ **温度监控** | CPU 温度（通过 /sys 或 termux-sensor） |
+| 📊 **系统信息** | 内存、存储、CPU 型号 |
+| 📈 **进程管理** | Top 进程 CPU 占用 |
+| 💡 **触觉反馈** | 支持 termux-vibrate 震动反馈 |
+| 🎨 **ANSI 色彩** | 适配 80x24 小终端 |
+
+### 安装 Termux API（可选但推荐）
+
+```bash
+pkg install termux-api
+```
+
+### 构建
+
+```bash
+# 方法一：使用构建脚本
+chmod +x build-termux.sh
+./build-termux.sh
+
+# 方法二：手动构建
+rustup target add aarch64-linux-android
+cargo build --features termux --target aarch64-linux-android --release
+```
+
+### 使用
+
+```bash
+# 在 Termux 中运行
+termux-monitor
+
+# 或通过 adb 在 Android 设备上运行
+adb push target/aarch64-linux-android/release/termux-monitor /data/local/tmp/
+adb shell chmod 755 /data/local/tmp/termux-monitor
+adb shell /data/local/tmp/termux-monitor
+```
+
+### 截图预览
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  ◆ Termux System Monitor    android    5d 12h 34m               ║
+╚══════════════════════════════════════════════════════════════════╝
+┌─ Battery & Temperature ────────────────────────────────────────────┐
+│ ⚡ 65%  ████████████████████░░░  │ Temperature: 32.5°C │
+│ Health: good | Status: charging | Temp: 32.5°C │
+└───────────────────────────────────────────────────────────────────┘
+┌─ CPU (Qualcomm Snapdragon 888) ─────────────────────────────────┐
+│ ⚡ Usage: 23.5%   █████░░░░░░░░░░░░░░░  │ 8 cores │
+└───────────────────────────────────────────────────────────────────┘
+┌─ Memory (2.1G/8.0G) ───────────────────────────────────────────────┐
+│ 💾 RAM:  26.3%  █████░░░░░░░░░░░░░░░  │ Cached: 1.2G │
+└───────────────────────────────────────────────────────────────────┘
+┌─ Storage ─────────────────────────────────────────────────────────┐
+│ 📦 Used: 45.2%  █████████░░░░░░░░░░░░  │ 92.5G/205.0G │
+└───────────────────────────────────────────────────────────────────┘
+┌─ Top Processes ────────────────────────────────────────────────────┐
+│    PID │ Name                     │   CPU % │
+│────────┼──────────────────────────┼──────────│
+│   1234 │ com.android.chrome       │   15.2% │
+│   5678 │ com.termux.x11           │    8.1% │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+### 键盘快捷键
+
+| 快捷键 | 功能 |
+|--------|------|
+| `Ctrl+C` | 退出程序 |
+
+### 注意事项
+
+1. 部分功能需要 Termux API 支持
+2. 电池信息需要 `termux-battery-status` 命令
+3. 温度读取会尝试多个路径，Android 设备可能需要 root 权限
+4. 进程列表可能因 Android 版本不同而有差异
 
 ## 📄 许可证
 
