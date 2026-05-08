@@ -1,6 +1,23 @@
 <template>
   <div class="process-list">
-    <h3>📋 {{ lang === 'zh' ? '热门进程' : 'Top Processes' }}</h3>
+    <div class="process-header">
+      <h3>📋 {{ lang === 'zh' ? '热门进程' : 'Top Processes' }}</h3>
+      <div class="sort-controls">
+        <span class="sort-label">{{ lang === 'zh' ? '排序' : 'Sort' }}:</span>
+        <button 
+          :class="{ active: sortBy === 'cpu' }" 
+          @click="sortBy = 'cpu'"
+        >
+          {{ lang === 'zh' ? 'CPU' : 'CPU' }}
+        </button>
+        <button 
+          :class="{ active: sortBy === 'memory' }" 
+          @click="sortBy = 'memory'"
+        >
+          {{ lang === 'zh' ? '内存' : 'Memory' }}
+        </button>
+      </div>
+    </div>
     <table>
       <thead>
         <tr>
@@ -11,11 +28,11 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="proc in processes.slice(0, 10)" :key="proc.pid">
+        <tr v-for="proc in sortedProcesses.slice(0, 10)" :key="proc.pid">
           <td>{{ proc.pid }}</td>
           <td class="name">{{ proc.name }}</td>
-          <td>{{ proc.cpu.toFixed(1) }}%</td>
-          <td>{{ proc.memory.toFixed(1) }}%</td>
+          <td :class="{ highlight: sortBy === 'cpu' }">{{ proc.cpu.toFixed(1) }}%</td>
+          <td :class="{ highlight: sortBy === 'memory' }">{{ proc.memory.toFixed(1) }}%</td>
         </tr>
       </tbody>
     </table>
@@ -23,12 +40,23 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const lang = ref(window.i18n?.isZh ? 'zh' : 'en')
+const sortBy = ref('cpu')
 
-defineProps({
+const props = defineProps({
   processes: Array
+})
+
+const sortedProcesses = computed(() => {
+  if (!props.processes) return []
+  return [...props.processes].sort((a, b) => {
+    if (sortBy.value === 'memory') {
+      return b.memory - a.memory
+    }
+    return b.cpu - a.cpu
+  })
 })
 </script>
 
@@ -40,10 +68,50 @@ defineProps({
   padding: 1.25rem;
 }
 
+.process-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
 h3 {
-  margin: 0 0 1rem 0;
+  margin: 0;
   font-size: 1rem;
   color: var(--text-primary);
+}
+
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sort-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.sort-controls button {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+}
+
+.sort-controls button:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.sort-controls button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
 }
 
 table {
@@ -76,6 +144,11 @@ td.name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+td.highlight {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 tr:last-child td {
