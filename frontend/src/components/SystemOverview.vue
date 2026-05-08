@@ -11,8 +11,9 @@
       </div>
       <div class="stat-footer">
         <span>{{ metrics.cpu.core_count }} {{ lang === 'zh' ? '核心' : 'Cores' }}</span>
-        <span>{{ formatLoad(metrics.cpu.per_core) }} {{ lang === 'zh' ? '平均' : 'avg' }}</span>
+        <span>{{ formatLoad(metrics.cpu.per_core) }}</span>
       </div>
+      <div class="stat-cpu-name">{{ metrics.cpu.name }}</div>
     </div>
 
     <div class="stat-card memory">
@@ -30,18 +31,29 @@
       </div>
     </div>
 
+    <div class="stat-card swap" v-if="metrics.swap.total > 0">
+      <div class="stat-header">
+        <span class="stat-icon">💿</span>
+        <span class="stat-title">{{ lang === 'zh' ? '交换分区' : 'Swap' }}</span>
+      </div>
+      <div class="stat-value">{{ metrics.swap.usage_percent.toFixed(1) }}%</div>
+      <div class="stat-bar">
+        <div class="stat-bar-fill swap-fill" :style="{ width: metrics.swap.usage_percent + '%' }"></div>
+      </div>
+      <div class="stat-footer">
+        <span>{{ formatBytes(metrics.swap.used) }}</span>
+        <span>{{ formatBytes(metrics.swap.total) }}</span>
+      </div>
+    </div>
+
     <div class="stat-card disk">
       <div class="stat-header">
         <span class="stat-icon">💾</span>
         <span class="stat-title">{{ lang === 'zh' ? '磁盘 I/O' : 'Disk I/O' }}</span>
       </div>
       <div class="stat-value duo">
-        <span>R: {{ formatBytes(metrics.disk.read_rate) }}/s</span>
-        <span>W: {{ formatBytes(metrics.disk.write_rate) }}/s</span>
-      </div>
-      <div class="stat-footer">
-        <span>{{ lang === 'zh' ? '读取' : 'Read' }}</span>
-        <span>{{ lang === 'zh' ? '写入' : 'Write' }}</span>
+        <span>↓ {{ formatBytes(metrics.disk.read_rate) }}/s</span>
+        <span>↑ {{ formatBytes(metrics.disk.write_rate) }}/s</span>
       </div>
     </div>
 
@@ -54,9 +66,19 @@
         <span>↓ {{ formatBytes(metrics.network.rx_rate) }}/s</span>
         <span>↑ {{ formatBytes(metrics.network.tx_rate) }}/s</span>
       </div>
-      <div class="stat-footer">
-        <span>{{ lang === 'zh' ? '下载' : 'Download' }}</span>
-        <span>{{ lang === 'zh' ? '上传' : 'Upload' }}</span>
+    </div>
+
+    <div class="stat-card battery" v-if="metrics.battery">
+      <div class="stat-header">
+        <span class="stat-icon">🔋</span>
+        <span class="stat-title">{{ lang === 'zh' ? '电池' : 'Battery' }}</span>
+      </div>
+      <div class="stat-value" :class="{ charging: metrics.battery.is_charging }">
+        {{ metrics.battery.charge_percent.toFixed(0) }}%
+        <span v-if="metrics.battery.is_charging" class="charging-icon">⚡</span>
+      </div>
+      <div class="stat-bar">
+        <div class="stat-bar-fill battery-fill" :style="{ width: metrics.battery.charge_percent + '%' }"></div>
       </div>
     </div>
   </div>
@@ -89,7 +111,7 @@ function formatLoad(perCore) {
 <style scoped>
 .overview {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
   margin-bottom: 2rem;
 }
@@ -139,6 +161,20 @@ function formatLoad(perCore) {
   font-size: 1.1rem;
 }
 
+.stat-value.charging {
+  color: var(--success);
+}
+
+.charging-icon {
+  margin-left: 0.5rem;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 .stat-bar {
   height: 6px;
   background: var(--bg-secondary);
@@ -161,10 +197,27 @@ function formatLoad(perCore) {
   background: linear-gradient(90deg, #22c55e, #10b981);
 }
 
+.swap-fill {
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+}
+
+.battery-fill {
+  background: linear-gradient(90deg, #22c55e, #10b981);
+}
+
 .stat-footer {
   display: flex;
   justify-content: space-between;
   font-size: 0.75rem;
   color: var(--text-secondary);
+}
+
+.stat-cpu-name {
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

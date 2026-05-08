@@ -24,8 +24,9 @@ pub async fn handle_socket(
                 }
             }
             msg = ws_receiver.next() => {
-                if msg.is_none() {
-                    return;
+                match msg {
+                    Some(Ok(Message::Close(_))) | None => return,
+                    _ => {}
                 }
             }
         }

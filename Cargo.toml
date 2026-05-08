@@ -1,23 +1,29 @@
 [package]
 name = "linux-system-monitor"
-version = "2.0.0"
+version = "2.1.0"
 edition = "2021"
-description = "Real-time Linux/Windows system monitoring with Web UI"
+description = "Ultra-lightweight real-time system monitoring"
 license = "MIT"
 
 [dependencies]
-tokio = { version = "1.35", features = ["full"] }
+tokio = { version = "1.35", features = ["rt-multi-thread", "time", "sync", "macros"] }
 axum = { version = "0.7", features = ["ws"] }
-tower-http = { version = "0.5", features = ["cors", "fs"] }
+tower-http = { version = "0.5", features = ["cors"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sysinfo = "0.30"
 chrono = { version = "0.4", features = ["serde"] }
-parking_lot = "0.12"
 tracing = "0.1"
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 futures-util = "0.3"
 
 [profile.release]
-opt-level = 3
+opt-level = "z"
 lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+opt-level = 0
+debug = false

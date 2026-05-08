@@ -1,23 +1,33 @@
 use serde::{Deserialize, Serialize};
 use sysinfo::{System, Disks, CpuRefreshKind, MemoryRefreshKind, RefreshKind, Networks};
+use std::fs;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemMetrics {
     pub timestamp: i64,
     pub uptime: i64,
+    pub hostname: String,
+    pub os_version: String,
+    pub kernel: String,
     pub cpu: CpuMetrics,
     pub memory: MemoryMetrics,
+    pub swap: SwapMetrics,
     pub disk: DiskMetrics,
+    pub disks: Vec<DiskInfo>,
     pub network: NetworkMetrics,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub processes: Option<Vec<ProcessInfo>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub battery: Option<BatteryInfo>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CpuMetrics {
+    pub name: String,
     pub usage: f32,
     pub core_count: usize,
     pub per_core: Vec<f32>,
+    pub frequencies: Vec<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -29,11 +39,26 @@ pub struct MemoryMetrics {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SwapMetrics {
+    pub total: u64,
+    pub used: u64,
+    pub usage_percent: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiskMetrics {
-    pub read_bytes: u64,
-    pub write_bytes: u64,
     pub read_rate: u64,
     pub write_rate: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiskInfo {
+    pub name: String,
+    pub mount_point: String,
+    pub total: u64,
+    pub used: u64,
+    pub available: u64,
+    pub usage_percent: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,6 +75,14 @@ pub struct ProcessInfo {
     pub name: String,
     pub cpu: f32,
     pub memory: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BatteryInfo {
+    pub name: String,
+    pub charge_percent: f32,
+    pub is_charging: bool,
+    pub time_remaining: i32,
 }
 
 pub struct MetricsCollector {
@@ -91,20 +124,33 @@ impl MetricsCollector {
         let timestamp = chrono::Utc::now().timestamp();
         let uptime = timestamp - self.boot_time;
         
+        let hostname = System::host_name().unwrap_or_else(|| "Unknown".to_string());
+        let os_version = System::os_version().unwrap_or_else(|| "Unknown".to_string());
+        let kernel = System::kernel_version().unwrap_or_else(|| "Unknown".to_string());
+        
         let cpu = self.collect_cpu();
         let memory = self.collect_memory();
-        let disk = self.collect_disk();
+        let swap = self.collect_swap();
+        let disk = self.collect_disk_io();
+        let disks = self.collect_disk_info();
         let network = self.collect_network();
         let processes = self.collect_processes();
+        let battery = self.collect_battery();
         
         SystemMetrics {
             timestamp,
             uptime,
+            hostname,
+            os_version,
+            kernel,
             cpu,
             memory,
+            swap,
             disk,
+            disks,
             network,
             processes,
+            battery,
         }
     }
 
@@ -117,10 +163,17 @@ impl MetricsCollector {
             per_core.iter().sum::<f32>() / per_core.len() as f32
         };
         
+        let frequencies: Vec<u64> = cpus.iter().map(|c| c.frequency()).collect();
+        let cpu_name = cpus.first()
+            .map(|c| c.brand().to_string())
+            .unwrap_or_else(|| "Unknown CPU".to_string());
+        
         CpuMetrics {
+            name: cpu_name,
             usage,
             core_count: cpus.len(),
             per_core,
+            frequencies,
         }
     }
 
@@ -142,13 +195,39 @@ impl MetricsCollector {
         }
     }
 
-    fn collect_disk(&mut self) -> DiskMetrics {
+    fn collect_swap(&self) -> SwapMetrics {
+        let total = self.system.total_swap();
+        let used = self.system.used_swap();
+        let usage_percent = if total > 0 {
+            (used as f32 / total as f32) * 100.0
+        } else {
+            0.0
+        };
+        
+        SwapMetrics {
+            total,
+            used,
+            usage_percent,
+        }
+    }
+
+    fn collect_disk_io(&mut self) -> DiskMetrics {
         let mut total_read: u64 = 0;
         let mut total_write: u64 = 0;
         
-        for disk in self.disks.iter() {
-            total_read += disk.total_space();
-            total_write += disk.available_space();
+        if let Ok(content) = fs::read_to_string("/proc/diskstats") {
+            for line in content.lines() {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 14 {
+                    if let (Ok(sectors_read), Ok(sectors_written)) = (
+                        parts[5].parse::<u64>(),
+                        parts[9].parse::<u64>()
+                    ) {
+                        total_read += sectors_read * 512;
+                        total_write += sectors_written * 512;
+                    }
+                }
+            }
         }
         
         let read_rate = total_read.saturating_sub(self.last_disk_stats.0);
@@ -157,11 +236,33 @@ impl MetricsCollector {
         self.last_disk_stats = (total_read, total_write);
         
         DiskMetrics {
-            read_bytes: total_read,
-            write_bytes: total_write,
             read_rate,
             write_rate,
         }
+    }
+
+    fn collect_disk_info(&self) -> Vec<DiskInfo> {
+        self.disks.iter()
+            .map(|disk| {
+                let total = disk.total_space();
+                let available = disk.available_space();
+                let used = total.saturating_sub(available);
+                let usage_percent = if total > 0 {
+                    (used as f32 / total as f32) * 100.0
+                } else {
+                    0.0
+                };
+                
+                DiskInfo {
+                    name: disk.name().to_string_lossy().to_string(),
+                    mount_point: disk.mount_point().to_string_lossy().to_string(),
+                    total,
+                    used,
+                    available,
+                    usage_percent,
+                }
+            })
+            .collect()
     }
 
     fn collect_network(&mut self) -> NetworkMetrics {
@@ -216,7 +317,27 @@ impl MetricsCollector {
             }
         });
         
-        processes.truncate(20);
+        processes.truncate(15);
         Some(processes)
+    }
+
+    fn collect_battery(&self) -> Option<BatteryInfo> {
+        if let Ok(content) = fs::read_to_string("/sys/class/power_supply/BAT0/status") {
+            let is_charging = content.trim() == "Charging";
+            
+            if let Ok(charge_str) = fs::read_to_string("/sys/class/power_supply/BAT0/capacity") {
+                if let Ok(charge) = charge_str.trim().parse::<f32>() {
+                    let time_remaining = if is_charging { 0 } else { -1 };
+                    
+                    return Some(BatteryInfo {
+                        name: "BAT0".to_string(),
+                        charge_percent: charge,
+                        is_charging,
+                        time_remaining,
+                    });
+                }
+            }
+        }
+        None
     }
 }
