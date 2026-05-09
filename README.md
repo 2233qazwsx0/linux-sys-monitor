@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://github.com/2233qazwsx0/linux-sys-monitor/releases">
-    <img src="https://img.shields.io/badge/Version-4.0.0-6366f1?style=flat-square" alt="Version">
+    <img src="https://img.shields.io/badge/Version-4.2.0-6366f1?style=flat-square" alt="Version">
   </a>
   <a href="https://github.com/2233qazwsx0/linux-sys-monitor/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License">
@@ -51,9 +51,9 @@
 curl -fsSL https://git.io/Jzkzg | bash
 
 # 或下载解压
-wget https://github.com/2233qazwsx0/linux-sys-monitor/releases/download/v4.0.0/linux-system-monitor-4.0.0-linux-x64.tar.gz
-tar -xzf linux-system-monitor-4.0.0-linux-x64.tar.gz
-cd v4.0.0 && sudo ./install.sh
+wget https://github.com/2233qazwsx0/linux-sys-monitor/releases/download/v4.2.0/linux-system-monitor-4.2.0-linux-x64.tar.gz
+tar -xzf linux-system-monitor-4.2.0-linux-x64.tar.gz
+cd v4.2.0 && sudo ./install.sh
 ```
 
 打开 **http://localhost:8080**
@@ -86,7 +86,7 @@ docker-compose up -d
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  📊 System Monitor v4.0.0          [🌙/☀️] [⚙️] [📤]      │
+│  📊 System Monitor v4.2.0          [🌙/☀️] [⚙️] [📤]      │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐       │
@@ -300,7 +300,7 @@ linux-system-monitor/
 
 | 版本 | 日期 | 主要更新 |
 |------|------|----------|
-| v4.0.0 | 2024-05 | 100+ 功能，Windows 安装器 |
+| v4.2.0 | 2024-05 | 100+ 功能，Windows 原生支持 |
 | v3.0.0 | 2024-05 | CLI 模式，Termux 支持 |
 | v2.5.0 | 2024-05 | 告警系统，数据导出，主题切换 |
 | v2.1.0 | 2024-05 | 温度监控，负载平均，网络连接 |
