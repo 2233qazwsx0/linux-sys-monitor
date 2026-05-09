@@ -48,7 +48,7 @@
 
 ```bash
 # 一键安装
-curl -fsSL https://git.io/Jzkzg | bash
+curl -fsSL https://raw.githubusercontent.com/2233qazwsx0/linux-sys-monitor/main/setup.sh | bash
 
 # 或下载解压
 wget https://github.com/2233qazwsx0/linux-sys-monitor/releases/download/v4.2.0/linux-system-monitor-4.2.0-linux-x64.tar.gz
@@ -62,7 +62,7 @@ cd v4.2.0 && sudo ./install.sh
 
 ```powershell
 # 方法一：一键安装 (推荐)
-irm https://git.io/Jzkzg-win | iex
+irm https://raw.githubusercontent.com/2233qazwsx0/linux-sys-monitor/main/install-windows.ps1 | iex
 
 # 方法二：下载安装器
 # 下载 system-monitor-installer.exe 并运行
