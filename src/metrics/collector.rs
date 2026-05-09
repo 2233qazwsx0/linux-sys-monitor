@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use sysinfo::{System, Disks, CpuRefreshKind, MemoryRefreshKind, RefreshKind, Networks};
-use std::fs;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -10,6 +9,7 @@ pub struct SystemMetrics {
     pub hostname: String,
     pub os_version: String,
     pub kernel: String,
+    pub platform: String,
     pub cpu: CpuMetrics,
     pub memory: MemoryMetrics,
     pub swap: SwapMetrics,
@@ -320,6 +320,8 @@ impl MetricsCollector {
         let os_version = System::os_version().unwrap_or_else(|| "Unknown".to_string());
         let kernel = System::kernel_version().unwrap_or_else(|| "Unknown".to_string());
         
+        let platform = Self::detect_platform();
+        
         let cpu = self.collect_cpu();
         let memory = self.collect_memory();
         let swap = self.collect_swap();
@@ -336,6 +338,7 @@ impl MetricsCollector {
             hostname,
             os_version,
             kernel,
+            platform,
             cpu,
             memory,
             swap,
@@ -345,6 +348,22 @@ impl MetricsCollector {
             network_details,
             processes,
             battery,
+        }
+    }
+
+    fn detect_platform() -> String {
+        if cfg!(target_os = "linux") {
+            if cfg!(target_os = "android") {
+                "android".to_string()
+            } else {
+                "linux".to_string()
+            }
+        } else if cfg!(target_os = "windows") {
+            "windows".to_string()
+        } else if cfg!(target_os = "macos") {
+            "macos".to_string()
+        } else {
+            "unknown".to_string()
         }
     }
 
@@ -406,32 +425,56 @@ impl MetricsCollector {
     }
 
     fn collect_disk_io(&mut self) -> DiskMetrics {
-        let mut total_read: u64 = 0;
-        let mut total_write: u64 = 0;
-        
-        if let Ok(content) = fs::read_to_string("/proc/diskstats") {
-            for line in content.lines() {
-                let parts: Vec<&str> = line.split_whitespace().collect();
-                if parts.len() >= 14 {
-                    if let (Ok(sectors_read), Ok(sectors_written)) = (
-                        parts[5].parse::<u64>(),
-                        parts[9].parse::<u64>()
-                    ) {
-                        total_read += sectors_read * 512;
-                        total_write += sectors_written * 512;
+        #[cfg(target_os = "linux")]
+        {
+            use std::fs;
+            
+            let mut total_read: u64 = 0;
+            let mut total_write: u64 = 0;
+            
+            if let Ok(content) = fs::read_to_string("/proc/diskstats") {
+                for line in content.lines() {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if parts.len() >= 14 {
+                        if let (Ok(sectors_read), Ok(sectors_written)) = (
+                            parts[5].parse::<u64>(),
+                            parts[9].parse::<u64>()
+                        ) {
+                            total_read += sectors_read * 512;
+                            total_write += sectors_written * 512;
+                        }
                     }
                 }
             }
+            
+            let read_rate = total_read.saturating_sub(self.last_disk_stats.0);
+            let write_rate = total_write.saturating_sub(self.last_disk_stats.1);
+            
+            self.last_disk_stats = (total_read, total_write);
+            
+            return DiskMetrics {
+                read_rate,
+                write_rate,
+            };
         }
         
-        let read_rate = total_read.saturating_sub(self.last_disk_stats.0);
-        let write_rate = total_write.saturating_sub(self.last_disk_stats.1);
-        
-        self.last_disk_stats = (total_read, total_write);
-        
-        DiskMetrics {
-            read_rate,
-            write_rate,
+        #[cfg(not(target_os = "linux"))]
+        {
+            let total = self.system.disks().iter()
+                .map(|d| d.total_space())
+                .sum::<u64>();
+            let available = self.system.disks().iter()
+                .map(|d| d.available_space())
+                .sum::<u64>();
+            let used = total.saturating_sub(available);
+            
+            self.last_disk_stats.0 += used;
+            self.last_disk_stats.1 = 0;
+            
+            DiskMetrics {
+                read_rate: self.last_disk_stats.0.saturating_sub(self.last_disk_stats.1),
+                write_rate: 0,
+            }
         }
     }
 
@@ -516,22 +559,41 @@ impl MetricsCollector {
     }
 
     fn collect_battery(&self) -> Option<BatteryInfo> {
-        if let Ok(content) = fs::read_to_string("/sys/class/power_supply/BAT0/status") {
-            let is_charging = content.trim() == "Charging";
+        #[cfg(target_os = "linux")]
+        {
+            use std::fs;
             
-            if let Ok(charge_str) = fs::read_to_string("/sys/class/power_supply/BAT0/capacity") {
-                if let Ok(charge) = charge_str.trim().parse::<f32>() {
-                    let time_remaining = if is_charging { 0 } else { -1 };
-                    
-                    return Some(BatteryInfo {
-                        name: "BAT0".to_string(),
-                        charge_percent: charge,
-                        is_charging,
-                        time_remaining,
-                    });
+            if let Ok(content) = fs::read_to_string("/sys/class/power_supply/BAT0/status") {
+                let is_charging = content.trim() == "Charging";
+                
+                if let Ok(charge_str) = fs::read_to_string("/sys/class/power_supply/BAT0/capacity") {
+                    if let Ok(charge) = charge_str.trim().parse::<f32>() {
+                        let time_remaining = if is_charging { 0 } else { -1 };
+                        
+                        return Some(BatteryInfo {
+                            name: "BAT0".to_string(),
+                            charge_percent: charge,
+                            is_charging,
+                            time_remaining,
+                        });
+                    }
                 }
             }
         }
+        
+        #[cfg(target_os = "windows")]
+        {
+            for (name, data) in self.system.batteries() {
+                let charge = data.energy() as f32 / data.total_energy() as f32 * 100.0;
+                return Some(BatteryInfo {
+                    name: name.to_string(),
+                    charge_percent: charge,
+                    is_charging: data.is_charging(),
+                    time_remaining: data.time_to_empty().unwrap_or(-1) as i32,
+                });
+            }
+        }
+        
         None
     }
 
@@ -557,7 +619,10 @@ impl MetricsCollector {
         }
     }
 
+    #[cfg(target_os = "linux")]
     fn collect_interfaces(&self) -> Vec<NetworkInterface> {
+        use std::fs;
+        
         let mut interfaces = Vec::new();
         
         if let Ok(paths) = fs::read_dir("/sys/class/net") {
@@ -572,7 +637,15 @@ impl MetricsCollector {
         interfaces
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn collect_interfaces(&self) -> Vec<NetworkInterface> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
     fn read_interface_info(&self, name: &str) -> Option<NetworkInterface> {
+        use std::fs;
+        
         let sys_path = format!("/sys/class/net/{}", name);
         
         let ipv4 = self.read_ipv4_addresses(&sys_path);
@@ -599,7 +672,15 @@ impl MetricsCollector {
         })
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn read_interface_info(&self, _name: &str) -> Option<NetworkInterface> {
+        None
+    }
+
+    #[cfg(target_os = "linux")]
     fn read_ipv4_addresses(&self, sys_path: &str) -> Vec<String> {
+        use std::fs;
+        
         let mut addrs = Vec::new();
         
         if let Ok(content) = fs::read_to_string(format!("{}/ipv4/addr", sys_path)) {
@@ -616,7 +697,15 @@ impl MetricsCollector {
         addrs
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn read_ipv4_addresses(&self, _sys_path: &str) -> Vec<String> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
     fn read_ipv6_addresses(&self, sys_path: &str) -> Vec<String> {
+        use std::fs;
+        
         let mut addrs = Vec::new();
         
         if let Ok(content) = fs::read_to_string(format!("{}/ipv6/addr", sys_path)) {
@@ -632,7 +721,15 @@ impl MetricsCollector {
         addrs
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn read_ipv6_addresses(&self, _sys_path: &str) -> Vec<String> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
     fn read_interface_flags(&self, sys_path: &str) -> Vec<String> {
+        use std::fs;
+        
         let mut flags_list = Vec::new();
         
         let flags = fs::read_to_string(format!("{}/flags", sys_path))
@@ -655,7 +752,15 @@ impl MetricsCollector {
         flags_list
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn read_interface_flags(&self, _sys_path: &str) -> Vec<String> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
     fn collect_tcp_states(&self) -> TcpStates {
+        use std::fs;
+        
         let mut states = TcpStates::default();
         
         if let Ok(content) = fs::read_to_string("/proc/net/tcp") {
@@ -714,7 +819,15 @@ impl MetricsCollector {
         states
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn collect_tcp_states(&self) -> TcpStates {
+        TcpStates::default()
+    }
+
+    #[cfg(target_os = "linux")]
     fn collect_udp_endpoints(&self) -> UdpEndpoints {
+        use std::fs;
+        
         let mut endpoints = UdpEndpoints::default();
         let mut local_endpoints: Vec<UdpEndpoint> = Vec::new();
         
@@ -746,7 +859,15 @@ impl MetricsCollector {
         endpoints
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn collect_udp_endpoints(&self) -> UdpEndpoints {
+        UdpEndpoints::default()
+    }
+
+    #[cfg(target_os = "linux")]
     fn collect_listening_ports(&self) -> Vec<ListeningPort> {
+        use std::fs;
+        
         let mut ports = Vec::new();
         let mut pid_port_map: HashMap<u64, (u16, String)> = HashMap::new();
         
@@ -801,6 +922,12 @@ impl MetricsCollector {
         ports
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn collect_listening_ports(&self) -> Vec<ListeningPort> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
     fn parse_hex_port(local: &str) -> u16 {
         if let Some((_, port_str)) = local.rsplit_once(':') {
             u16::from_str_radix(port_str, 16).unwrap_or(0)
@@ -809,7 +936,15 @@ impl MetricsCollector {
         }
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn parse_hex_port(_local: &str) -> u16 {
+        0
+    }
+
+    #[cfg(target_os = "linux")]
     fn collect_established_connections(&self) -> Vec<ConnectionInfo> {
+        use std::fs;
+        
         let mut connections = Vec::new();
         let process_map = self.get_process_for_inode();
         
@@ -858,6 +993,12 @@ impl MetricsCollector {
         connections
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn collect_established_connections(&self) -> Vec<ConnectionInfo> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
     fn format_socket_address(hex_addr: &str) -> String {
         let parts: Vec<&str> = hex_addr.split(':').collect();
         if parts.len() < 2 {
@@ -880,7 +1021,15 @@ impl MetricsCollector {
         format!("{}:{}", hex_addr, port)
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn format_socket_address(hex_addr: &str) -> String {
+        hex_addr.to_string()
+    }
+
+    #[cfg(target_os = "linux")]
     fn get_process_for_inode(&self) -> HashMap<u64, (Option<String>, Option<u32>)> {
+        use std::fs;
+        
         let mut map = HashMap::new();
         
         if let Ok(fd_dir) = fs::read_dir("/proc") {
@@ -912,14 +1061,30 @@ impl MetricsCollector {
         map
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn get_process_for_inode(&self) -> HashMap<u64, (Option<String>, Option<u32>)> {
+        HashMap::new()
+    }
+
+    #[cfg(target_os = "linux")]
     fn get_process_name(&self, pid: u32) -> String {
+        use std::fs;
+        
         fs::read_to_string(format!("/proc/{}/comm", pid))
             .ok()
             .map(|s| s.trim().to_string())
             .unwrap_or_else(|| "unknown".to_string())
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn get_process_name(&self, _pid: u32) -> String {
+        "unknown".to_string()
+    }
+
+    #[cfg(target_os = "linux")]
     fn collect_bandwidth_total(&self) -> BandwidthTotal {
+        use std::fs;
+        
         let mut rx_bytes: u64 = 0;
         let mut tx_bytes: u64 = 0;
         let mut rx_packets: u64 = 0;
@@ -945,7 +1110,15 @@ impl MetricsCollector {
         }
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn collect_bandwidth_total(&self) -> BandwidthTotal {
+        BandwidthTotal::default()
+    }
+
+    #[cfg(target_os = "linux")]
     fn collect_packet_counts(&self) -> PacketCounts {
+        use std::fs;
+        
         let mut rx_packets: u64 = 0;
         let mut tx_packets: u64 = 0;
         let mut rx_errors: u64 = 0;
@@ -983,11 +1156,19 @@ impl MetricsCollector {
         }
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn collect_packet_counts(&self) -> PacketCounts {
+        PacketCounts::default()
+    }
+
     fn collect_error_counts(&self) -> ErrorCounts {
         ErrorCounts::default()
     }
 
+    #[cfg(target_os = "linux")]
     fn collect_interface_duplex(&self) -> HashMap<String, DuplexInfo> {
+        use std::fs;
+        
         let mut duplex_map = HashMap::new();
         
         if let Ok(paths) = fs::read_dir("/sys/class/net") {
@@ -1023,6 +1204,11 @@ impl MetricsCollector {
         duplex_map
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn collect_interface_duplex(&self) -> HashMap<String, DuplexInfo> {
+        HashMap::new()
+    }
+
     fn collect_wireless_info(&self) -> Vec<WirelessInfo> {
         Vec::new()
     }
@@ -1035,7 +1221,10 @@ impl MetricsCollector {
         None
     }
 
+    #[cfg(target_os = "linux")]
     fn collect_routing_table(&self) -> Vec<RouteEntry> {
+        use std::fs;
+        
         let mut routes = Vec::new();
         
         if let Ok(content) = fs::read_to_string("/proc/net/route") {
@@ -1057,7 +1246,15 @@ impl MetricsCollector {
         routes
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn collect_routing_table(&self) -> Vec<RouteEntry> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
     fn collect_arp_table(&self) -> Vec<ArpEntry> {
+        use std::fs;
+        
         let mut arp_entries = Vec::new();
         
         if let Ok(content) = fs::read_to_string("/proc/net/arp") {
@@ -1077,7 +1274,15 @@ impl MetricsCollector {
         arp_entries
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn collect_arp_table(&self) -> Vec<ArpEntry> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
     fn collect_network_namespaces(&self) -> Vec<NetworkNamespace> {
+        use std::fs;
+        
         let mut namespaces = Vec::new();
         
         if let Ok(paths) = fs::read_dir("/var/run/netns") {
@@ -1093,7 +1298,15 @@ impl MetricsCollector {
         namespaces
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn collect_network_namespaces(&self) -> Vec<NetworkNamespace> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
     fn collect_socket_stats(&self) -> SocketStats {
+        use std::fs;
+        
         let mut stats = SocketStats::default();
         
         if let Ok(content) = fs::read_to_string("/proc/net/sockstat") {
@@ -1113,7 +1326,15 @@ impl MetricsCollector {
         stats
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn collect_socket_stats(&self) -> SocketStats {
+        SocketStats::default()
+    }
+
+    #[cfg(target_os = "linux")]
     fn collect_connection_limits(&self) -> ConnectionLimits {
+        use std::fs;
+        
         let mut limits = ConnectionLimits::default();
         
         limits.max_files = fs::read_to_string("/proc/sys/fs/file-max")
@@ -1137,7 +1358,15 @@ impl MetricsCollector {
         limits
     }
 
+    #[cfg(not(target_os = "linux"))]
+    fn collect_connection_limits(&self) -> ConnectionLimits {
+        ConnectionLimits::default()
+    }
+
+    #[cfg(target_os = "linux")]
     pub fn collect_cpu_governor(&self) -> Vec<CpuGovernor> {
+        use std::fs;
+        
         let mut governors = Vec::new();
         let cpus = self.system.cpus();
         
@@ -1154,7 +1383,15 @@ impl MetricsCollector {
         governors
     }
 
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_cpu_governor(&self) -> Vec<CpuGovernor> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
     pub fn collect_context_switches(&self) -> ContextSwitches {
+        use std::fs;
+        
         let mut voluntary: u64 = 0;
         let mut involuntary: u64 = 0;
         
@@ -1179,7 +1416,19 @@ impl MetricsCollector {
         }
     }
 
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_context_switches(&self) -> ContextSwitches {
+        ContextSwitches {
+            voluntary: 0,
+            involuntary: 0,
+            total: 0,
+        }
+    }
+
+    #[cfg(target_os = "linux")]
     pub fn collect_interrupts(&self) -> Interrupts {
+        use std::fs;
+        
         let mut total: u64 = 0;
         let mut per_cpu: Vec<u64> = Vec::new();
         let num_cpus = self.system.cpus().len();
@@ -1217,7 +1466,18 @@ impl MetricsCollector {
         Interrupts { total, per_cpu }
     }
 
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_interrupts(&self) -> Interrupts {
+        Interrupts {
+            total: 0,
+            per_cpu: Vec::new(),
+        }
+    }
+
+    #[cfg(target_os = "linux")]
     pub fn collect_softirqs(&self) -> Softirqs {
+        use std::fs;
+        
         let softirq_names = [
             "HI", "TIMER", "NET_TX", "NET_RX", "BLOCK", "IRQ_POLL",
             "TASKLET", "SCHED", "HRTIMER", "RCU"
@@ -1252,7 +1512,18 @@ impl MetricsCollector {
         Softirqs { total, per_softirq }
     }
 
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_softirqs(&self) -> Softirqs {
+        Softirqs {
+            total: 0,
+            per_softirq: Vec::new(),
+        }
+    }
+
+    #[cfg(target_os = "linux")]
     pub fn collect_memory_pressure(&self) -> MemoryPressure {
+        use std::fs;
+        
         if let Ok(content) = fs::read_to_string("/proc/pressure/memory") {
             let parts: Vec<&str> = content.split_whitespace().collect();
             if parts.len() >= 3 {
@@ -1277,7 +1548,18 @@ impl MetricsCollector {
         }
     }
 
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_memory_pressure(&self) -> MemoryPressure {
+        MemoryPressure {
+            level: "unknown".to_string(),
+            numeric_value: 0,
+        }
+    }
+
+    #[cfg(target_os = "linux")]
     pub fn collect_swap_rate(&mut self) -> SwapRate {
+        use std::fs;
+        
         let mut swap_in: u64 = 0;
         let mut swap_out: u64 = 0;
         
@@ -1301,6 +1583,14 @@ impl MetricsCollector {
         }
     }
 
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_swap_rate(&mut self) -> SwapRate {
+        SwapRate {
+            swap_in_rate: 0,
+            swap_out_rate: 0,
+        }
+    }
+
     pub fn collect_cpu_steal_time(&self) -> CpuStealTime {
         let cpus = self.system.cpus();
         let mut per_core_steal: Vec<f32> = Vec::new();
@@ -1320,7 +1610,10 @@ impl MetricsCollector {
         }
     }
 
+    #[cfg(target_os = "linux")]
     pub fn collect_io_operations(&self) -> IoOperations {
+        use std::fs;
+        
         let mut reads: u64 = 0;
         let mut writes: u64 = 0;
         let mut read_bytes: u64 = 0;
@@ -1366,7 +1659,21 @@ impl MetricsCollector {
         }
     }
 
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_io_operations(&self) -> IoOperations {
+        IoOperations {
+            reads: 0,
+            writes: 0,
+            read_bytes: 0,
+            write_bytes: 0,
+            per_disk: Vec::new(),
+        }
+    }
+
+    #[cfg(target_os = "linux")]
     pub fn collect_disk_queue_depth(&self) -> Vec<DiskQueueDepth> {
+        use std::fs;
+        
         let mut queues: Vec<DiskQueueDepth> = Vec::new();
         
         if let Ok(entries) = fs::read_dir("/sys/block") {
@@ -1401,105 +1708,133 @@ impl MetricsCollector {
         queues
     }
 
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_disk_queue_depth(&self) -> Vec<DiskQueueDepth> {
+        Vec::new()
+    }
+
     pub fn collect_filesystem_stats(&self) -> Vec<FilesystemStats> {
-        let mut stats: Vec<FilesystemStats> = Vec::new();
-        
-        if let Ok(output) = std::process::Command::new("df")
-            .args(["-T", "-B1", "-i"])
-            .output()
+        #[cfg(target_os = "linux")]
         {
-            if let Ok(content) = String::from_utf8(output.stdout) {
-                for line in content.lines().skip(1) {
-                    let parts: Vec<&str> = line.split_whitespace().collect();
-                    if parts.len() >= 7 {
-                        let fs_type = parts[1].to_string();
-                        let mount_point = parts[6].to_string();
-                        
-                        if mount_point.starts_with("/snap") || mount_point == "tmpfs" || mount_point == "devtmpfs" {
-                            continue;
+            use std::process::Command;
+            
+            let mut stats: Vec<FilesystemStats> = Vec::new();
+            
+            if let Ok(output) = Command::new("df")
+                .args(["-T", "-B1", "-i"])
+                .output()
+            {
+                if let Ok(content) = String::from_utf8(output.stdout) {
+                    for line in content.lines().skip(1) {
+                        let parts: Vec<&str> = line.split_whitespace().collect();
+                        if parts.len() >= 7 {
+                            let fs_type = parts[1].to_string();
+                            let mount_point = parts[6].to_string();
+                            
+                            if mount_point.starts_with("/snap") || mount_point == "tmpfs" || mount_point == "devtmpfs" {
+                                continue;
+                            }
+                            
+                            let total: u64 = parts[2].parse().unwrap_or(0);
+                            let used: u64 = parts[3].parse().unwrap_or(0);
+                            let available: u64 = parts[4].parse().unwrap_or(0);
+                            
+                            let inode_total: u64 = parts[5].parse().unwrap_or(0);
+                            let inode_used: u64 = parts[6].parse().unwrap_or(0);
+                            let inode_free = inode_total.saturating_sub(inode_used);
+                            
+                            let usage_percent = if total > 0 {
+                                (used as f32 / total as f32) * 100.0
+                            } else {
+                                0.0
+                            };
+                            
+                            let inode_usage_percent = if inode_total > 0 {
+                                (inode_used as f32 / inode_total as f32) * 100.0
+                            } else {
+                                0.0
+                            };
+                            
+                            stats.push(FilesystemStats {
+                                filesystem: fs_type,
+                                mount_point,
+                                total,
+                                used,
+                                available,
+                                usage_percent,
+                                inode_total,
+                                inode_used,
+                                inode_free,
+                                inode_usage_percent,
+                            });
                         }
-                        
-                        let total: u64 = parts[2].parse().unwrap_or(0);
-                        let used: u64 = parts[3].parse().unwrap_or(0);
-                        let available: u64 = parts[4].parse().unwrap_or(0);
-                        
-                        let inode_total: u64 = parts[5].parse().unwrap_or(0);
-                        let inode_used: u64 = parts[6].parse().unwrap_or(0);
-                        let inode_free = inode_total.saturating_sub(inode_used);
-                        
-                        let usage_percent = if total > 0 {
-                            (used as f32 / total as f32) * 100.0
-                        } else {
-                            0.0
-                        };
-                        
-                        let inode_usage_percent = if inode_total > 0 {
-                            (inode_used as f32 / inode_total as f32) * 100.0
-                        } else {
-                            0.0
-                        };
-                        
-                        stats.push(FilesystemStats {
-                            filesystem: fs_type,
-                            mount_point,
-                            total,
-                            used,
-                            available,
-                            usage_percent,
-                            inode_total,
-                            inode_used,
-                            inode_free,
-                            inode_usage_percent,
-                        });
                     }
                 }
             }
+            
+            return stats;
         }
         
-        stats
+        #[cfg(not(target_os = "linux"))]
+        {
+            Vec::new()
+        }
     }
 
     pub fn collect_inode_usage(&self) -> Vec<InodeUsage> {
-        let mut usage: Vec<InodeUsage> = Vec::new();
-        
-        if let Ok(output) = std::process::Command::new("df")
-            .args(["-i"])
-            .output()
+        #[cfg(target_os = "linux")]
         {
-            if let Ok(content) = String::from_utf8(output.stdout) {
-                for line in content.lines().skip(1) {
-                    let parts: Vec<&str> = line.split_whitespace().collect();
-                    if parts.len() >= 6 {
-                        let mount_point = parts[5].to_string();
-                        
-                        if mount_point.starts_with("/snap") || mount_point == "tmpfs" {
-                            continue;
+            use std::process::Command;
+            
+            let mut usage: Vec<InodeUsage> = Vec::new();
+            
+            if let Ok(output) = Command::new("df")
+                .args(["-i"])
+                .output()
+            {
+                if let Ok(content) = String::from_utf8(output.stdout) {
+                    for line in content.lines().skip(1) {
+                        let parts: Vec<&str> = line.split_whitespace().collect();
+                        if parts.len() >= 6 {
+                            let mount_point = parts[5].to_string();
+                            
+                            if mount_point.starts_with("/snap") || mount_point == "tmpfs" {
+                                continue;
+                            }
+                            
+                            let inode_total: u64 = parts[1].parse().unwrap_or(0);
+                            let inode_used: u64 = parts[2].parse().unwrap_or(0);
+                            let usage_percent = if inode_total > 0 {
+                                (inode_used as f32 / inode_total as f32) * 100.0
+                            } else {
+                                0.0
+                            };
+                            
+                            usage.push(InodeUsage {
+                                filesystem: parts[0].to_string(),
+                                mount_point,
+                                total: inode_total,
+                                used: inode_used,
+                                usage_percent,
+                            });
                         }
-                        
-                        let inode_total: u64 = parts[1].parse().unwrap_or(0);
-                        let inode_used: u64 = parts[2].parse().unwrap_or(0);
-                        let usage_percent = if inode_total > 0 {
-                            (inode_used as f32 / inode_total as f32) * 100.0
-                        } else {
-                            0.0
-                        };
-                        
-                        usage.push(InodeUsage {
-                            filesystem: parts[0].to_string(),
-                            mount_point,
-                            total: inode_total,
-                            used: inode_used,
-                            usage_percent,
-                        });
                     }
                 }
             }
+            
+            return usage;
         }
         
-        usage
+        #[cfg(not(target_os = "linux"))]
+        {
+            Vec::new()
+        }
     }
 
+    #[cfg(target_os = "linux")]
     pub fn collect_open_files_count(&self) -> OpenFilesCount {
+        use std::fs;
+        
         let mut fds: u64 = 0;
         let mut sockets: u64 = 0;
         let mut pipes: u64 = 0;
@@ -1530,7 +1865,20 @@ impl MetricsCollector {
         }
     }
 
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_open_files_count(&self) -> OpenFilesCount {
+        OpenFilesCount {
+            total: 0,
+            file_descriptors: 0,
+            sockets: 0,
+            pipes: 0,
+        }
+    }
+
+    #[cfg(target_os = "linux")]
     pub fn collect_uptime_detailed(&self) -> UptimeDetailed {
+        use std::fs;
+        
         let mut seconds: u64 = 0;
         let mut idle_seconds: u64 = 0;
         
@@ -1559,7 +1907,22 @@ impl MetricsCollector {
         }
     }
 
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_uptime_detailed(&self) -> UptimeDetailed {
+        UptimeDetailed {
+            seconds: 0,
+            days: 0,
+            hours: 0,
+            minutes: 0,
+            formatted: "0 days, 0:00:00".to_string(),
+            idle_seconds: 0,
+        }
+    }
+
+    #[cfg(target_os = "linux")]
     pub fn collect_load_normalized(&self) -> LoadNormalized {
+        use std::fs;
+        
         let mut one_min: f64 = 0.0;
         let mut five_min: f64 = 0.0;
         let mut fifteen_min: f64 = 0.0;
@@ -1588,7 +1951,20 @@ impl MetricsCollector {
         }
     }
 
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_load_normalized(&self) -> LoadNormalized {
+        LoadNormalized {
+            one_minute: 0.0,
+            five_minutes: 0.0,
+            fifteen_minutes: 0.0,
+            normalized_to_cores: vec![0.0, 0.0, 0.0],
+        }
+    }
+
+    #[cfg(target_os = "linux")]
     pub fn collect_per_process_io(&self) -> Vec<PerProcessIo> {
+        use std::fs;
+        
         let mut io_stats: Vec<PerProcessIo> = Vec::new();
         
         for (pid, process) in self.system.processes() {
@@ -1634,7 +2010,15 @@ impl MetricsCollector {
         io_stats
     }
 
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_per_process_io(&self) -> Vec<PerProcessIo> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
     pub fn collect_memory_zones(&self) -> MemoryZones {
+        use std::fs;
+        
         let mut zones: Vec<MemoryZoneInfo> = Vec::new();
         
         let zone_names = ["DMA", "DMA32", "Normal", "HighMem", "Movable"];
@@ -1676,7 +2060,15 @@ impl MetricsCollector {
         MemoryZones { zones }
     }
 
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_memory_zones(&self) -> MemoryZones {
+        MemoryZones { zones: Vec::new() }
+    }
+
+    #[cfg(target_os = "linux")]
     pub fn collect_huge_pages(&self) -> HugePages {
+        use std::fs;
+        
         let mut total: u64 = 0;
         let mut free: u64 = 0;
         let mut surplus: u64 = 0;
@@ -1705,12 +2097,24 @@ impl MetricsCollector {
         }
     }
 
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_huge_pages(&self) -> HugePages {
+        HugePages {
+            total: 0,
+            free: 0,
+            surplus: 0,
+            default_size: 0,
+            size_kb: 0,
+        }
+    }
+
     pub fn collect_kernel_threads(&self) -> KernelThreads {
         let mut threads: Vec<KernelThreadInfo> = Vec::new();
         
         for (pid, process) in self.system.processes() {
             let name = process.name().to_string();
             
+            #[cfg(target_os = "linux")]
             if name.starts_with('[') {
                 threads.push(KernelThreadInfo {
                     pid: pid.as_u32(),
@@ -1718,6 +2122,9 @@ impl MetricsCollector {
                     state: "kernel".to_string(),
                 });
             }
+            
+            #[cfg(not(target_os = "linux"))]
+            let _ = (name, pid);
         }
         
         let count = threads.len() as u64;
@@ -1725,11 +2132,16 @@ impl MetricsCollector {
     }
 
     pub fn collect_user_threads(&self) -> UserThreads {
-        let count = self.system.processes().values()
-            .filter(|p| !p.name().starts_with('['))
-            .count() as u64;
+        #[cfg(target_os = "linux")]
+        {
+            let count = self.system.processes().values()
+                .filter(|p| !p.name().starts_with('['))
+                .count() as u64;
+            return UserThreads { count };
+        }
         
-        UserThreads { count }
+        #[cfg(not(target_os = "linux"))]
+        UserThreads { count: 0 }
     }
 
     pub fn collect_zombie_processes(&self) -> ZombieProcesses {
