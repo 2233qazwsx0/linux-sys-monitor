@@ -1,0 +1,13 @@
+[package]
+name = "system-monitor-gui-installer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eframe = "0.28"
+reqwest = { version = "0.12", features = ["blocking"] }
+zip = "2.1"
+anyhow = "1.0"
+tokio = { version = "1.37", features = ["full"] }
+rfd = "0.14"
+dirs = "5.0"

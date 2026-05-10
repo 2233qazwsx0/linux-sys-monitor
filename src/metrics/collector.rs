@@ -2348,3 +2348,1817 @@ pub struct ZombieProcesses {
     pub count: u64,
     pub zombies: Vec<ZombieProcessInfo>,
 }
+
+// ============================================
+// Advanced Monitoring Features (50)
+// ============================================
+
+// A. GPU Monitoring (NVIDIA/AMD/Intel)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GpuMetrics {
+    pub vendor: String,
+    pub name: String,
+    pub usage_percent: f32,
+    pub memory_used: u64,
+    pub memory_total: u64,
+    pub temperature: f32,
+    pub power_usage: f32,
+    pub clock_speed: u32,
+    pub fan_speed: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NvidiaGpuInfo {
+    pub index: u32,
+    pub name: String,
+    pub utilization_gpu: u32,
+    pub utilization_memory: u32,
+    pub memory_used: u64,
+    pub memory_total: u64,
+    pub temperature: u32,
+    pub power_draw: f32,
+    pub fan_speed: u32,
+    pub clock_sm: u32,
+    pub clock_memory: u32,
+    pub pci_bandwidth: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AmdGpuInfo {
+    pub index: u32,
+    pub name: String,
+    pub gpu_usage: u32,
+    pub memory_used: u64,
+    pub memory_total: u64,
+    pub temperature: u32,
+    pub power_consumption: f32,
+    pub fan_speed: u32,
+    pub clock_frequency: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IntelGpuInfo {
+    pub index: u32,
+    pub name: String,
+    pub engine_usage: u32,
+    pub memory_used: u64,
+    pub memory_total: u64,
+    pub temperature: u32,
+    pub frequency: u32,
+}
+
+// B. Network Bandwidth Prediction
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NetworkBandwidthPrediction {
+    pub interface: String,
+    pub current_rate: u64,
+    pub predicted_rate_1min: f64,
+    pub predicted_rate_5min: f64,
+    pub predicted_rate_15min: f64,
+    pub trend: String,
+    pub confidence: f64,
+}
+
+// C. Disk Health SMART
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiskSmartInfo {
+    pub device: String,
+    pub model: String,
+    pub serial: String,
+    pub health_status: String,
+    pub power_on_hours: u64,
+    pub reallocated_sectors: u64,
+    pub pending_sectors: u64,
+    pub uncorrectable_sectors: u64,
+    pub temperature: u32,
+    pub smart_attributes: Vec<SmartAttribute>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SmartAttribute {
+    pub id: u8,
+    pub name: String,
+    pub current: u8,
+    pub worst: u8,
+    pub threshold: u8,
+    pub raw_value: u64,
+}
+
+// D. RAID Status
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RaidInfo {
+    pub name: String,
+    pub level: String,
+    pub state: String,
+    pub devices: Vec<RaidDevice>,
+    pub raid_size: u64,
+    pub used_space: u64,
+    pub available_space: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RaidDevice {
+    pub device: String,
+    pub state: String,
+    pub role: String,
+}
+
+// E. LVM Status
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LvmVolumeGroup {
+    pub name: String,
+    pub size: u64,
+    pub free: u64,
+    pub lv_count: u32,
+    pub pv_count: u32,
+    pub logical_volumes: Vec<LvmLogicalVolume>,
+    pub physical_volumes: Vec<LvmPhysicalVolume>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LvmLogicalVolume {
+    pub name: String,
+    pub vg_name: String,
+    pub size: u64,
+    pub used: u64,
+    pub uuid: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LvmPhysicalVolume {
+    pub device: String,
+    pub size: u64,
+    pub free: u64,
+    pub uuid: String,
+}
+
+// F. Container Resources (Docker/LXD)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContainerInfo {
+    pub id: String,
+    pub name: String,
+    pub type_: String,
+    pub status: String,
+    pub cpu_percent: f32,
+    pub memory_used: u64,
+    pub memory_limit: u64,
+    pub network_rx: u64,
+    pub network_tx: u64,
+    pub disk_read: u64,
+    pub disk_write: u64,
+    pub image: String,
+    pub created: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DockerContainerStats {
+    pub containers: Vec<ContainerInfo>,
+    pub total_cpu_percent: f32,
+    pub total_memory_used: u64,
+    pub running_count: u32,
+    pub stopped_count: u32,
+}
+
+// G. K8s Node Status
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct K8sNodeInfo {
+    pub name: String,
+    pub status: String,
+    pub roles: Vec<String>,
+    pub age: String,
+    pub version: String,
+    pub cpu_capacity: u64,
+    pub memory_capacity: u64,
+    pub cpu_allocatable: u64,
+    pub memory_allocatable: u64,
+    pub pod_count: u32,
+    pub conditions: Vec<K8sNodeCondition>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct K8sNodeCondition {
+    pub type_: String,
+    pub status: String,
+    pub last_transition: String,
+}
+
+// H. Virtual Machine Monitoring
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VmInfo {
+    pub name: String,
+    pub state: String,
+    pub vcpu_count: u32,
+    pub memory_size: u64,
+    pub disk_size: u64,
+    pub ip_address: String,
+    pub mac_address: String,
+    pub uptime: u64,
+}
+
+// I. Filesystem Quota
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FilesystemQuota {
+    pub filesystem: String,
+    pub user_quotas: Vec<UserQuota>,
+    pub group_quotas: Vec<GroupQuota>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserQuota {
+    pub user: String,
+    pub used_space: u64,
+    pub soft_limit: u64,
+    pub hard_limit: u64,
+    pub used_inodes: u64,
+    pub inode_soft: u64,
+    pub inode_hard: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GroupQuota {
+    pub group: String,
+    pub used_space: u64,
+    pub soft_limit: u64,
+    pub hard_limit: u64,
+}
+
+// J. User Session Management
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserSession {
+    pub username: String,
+    pub session_id: String,
+    pub tty: String,
+    pub from: String,
+    pub login_time: String,
+    pub idle_time: String,
+    pub session_type: String,
+}
+
+// K. Login History
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoginRecord {
+    pub username: String,
+    pub tty: String,
+    pub ip: String,
+    pub login_time: String,
+    pub logout_time: Option<String>,
+    pub duration: u64,
+}
+
+// L. Sudo Command Records
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SudoCommandRecord {
+    pub timestamp: String,
+    pub username: String,
+    pub tty: String,
+    pub pwd: String,
+    pub command: String,
+    pub runuser: String,
+    pub runas: String,
+}
+
+// M. System Log Summary
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SystemLogSummary {
+    pub level: String,
+    pub count: u64,
+    pub recent_messages: Vec<LogMessage>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LogMessage {
+    pub timestamp: String,
+    pub host: String,
+    pub service: String,
+    pub message: String,
+}
+
+// N. Kernel Modules
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KernelModule {
+    pub name: String,
+    pub size: u32,
+    pub used_by: Vec<String>,
+    pub state: String,
+}
+
+// O. System Service Status
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServiceInfo {
+    pub name: String,
+    pub state: String,
+    pub active: String,
+    pub sub: String,
+    pub load: String,
+    pub pid: Option<u32>,
+    pub memory: u64,
+    pub cpu: f32,
+}
+
+// P. TCP Connection Tracking
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TcpConnectionTrack {
+    pub protocol: String,
+    pub local_address: String,
+    pub local_port: u16,
+    pub remote_address: String,
+    pub remote_port: u16,
+    pub state: String,
+    pub pid: Option<u32>,
+    pub inode: u64,
+}
+
+// Q. DNS Query Monitoring
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DnsQueryStats {
+    pub total_queries: u64,
+    pub successful: u64,
+    pub failed: u64,
+    pub cache_hits: u64,
+    pub cache_misses: u64,
+    pub query_types: std::collections::HashMap<String, u64>,
+    pub top_domains: Vec<DomainStats>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DomainStats {
+    pub domain: String,
+    pub query_count: u64,
+    pub avg_latency_ms: f64,
+}
+
+// R. SSL Certificate Check
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SslCertificateInfo {
+    pub domain: String,
+    pub issuer: String,
+    pub subject: String,
+    pub valid_from: String,
+    pub valid_until: String,
+    pub days_remaining: i64,
+    pub is_valid: bool,
+    pub protocol_version: String,
+    pub cipher_suite: String,
+}
+
+// S. Reverse Proxy Status
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReverseProxyStatus {
+    pub backend: String,
+    pub status: String,
+    pub connections_active: u32,
+    pub connections_total: u64,
+    pub bytes_sent: u64,
+    pub bytes_received: u64,
+    pub requests_total: u64,
+    pub response_time_avg_ms: f64,
+}
+
+// T. Database Connection
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DatabaseConnectionInfo {
+    pub database: String,
+    pub type_: String,
+    pub host: String,
+    pub port: u16,
+    pub active_connections: u32,
+    pub max_connections: u32,
+    pub idle_connections: u32,
+    pub waiting_connections: u32,
+    pub queries_per_second: f64,
+    pub slow_queries: u64,
+}
+
+// U. Cache Hit Rate
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CacheStats {
+    pub cache_name: String,
+    pub hits: u64,
+    pub misses: u64,
+    pub hit_rate: f64,
+    pub memory_used: u64,
+    pub memory_max: u64,
+    pub eviction_count: u64,
+}
+
+// V. Queue Length
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QueueMetrics {
+    pub queue_name: String,
+    pub length: u32,
+    pub max_length: u32,
+    pub messages_per_second: f64,
+    pub consumers: u32,
+    pub producers: u32,
+}
+
+// W. Batch Job Status
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BatchJobInfo {
+    pub job_id: String,
+    pub name: String,
+    pub state: String,
+    pub submit_time: String,
+    pub start_time: Option<String>,
+    pub end_time: Option<String>,
+    pub cpu_time: u64,
+    pub memory_used: u64,
+    pub exit_code: Option<i32>,
+}
+
+// X. Scheduled Task
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScheduledTask {
+    pub name: String,
+    pub schedule: String,
+    pub next_run: String,
+    pub last_run: Option<String>,
+    pub last_status: String,
+    pub enabled: bool,
+}
+
+// Y. Disk Quota
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiskQuotaInfo {
+    pub device: String,
+    pub user_quotas: Vec<QuotaEntry>,
+    pub group_quotas: Vec<QuotaEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QuotaEntry {
+    pub name: String,
+    pub space_used: u64,
+    pub space_soft: u64,
+    pub space_hard: u64,
+    pub inodes_used: u64,
+    pub inodes_soft: u64,
+    pub inodes_hard: u64,
+}
+
+// Z. Inode Usage Rate
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InodeMetrics {
+    pub filesystem: String,
+    pub mount_point: String,
+    pub total_inodes: u64,
+    pub used_inodes: u64,
+    pub free_inodes: u64,
+    pub usage_percent: f32,
+    pub inodes_per_second: f64,
+}
+
+// AA. Mount Point Details
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MountPointDetails {
+    pub device: String,
+    pub mount_point: String,
+    pub filesystem: String,
+    pub options: Vec<String>,
+    pub dump: u8,
+    pub pass: u8,
+    pub total_space: u64,
+    pub used_space: u64,
+    pub available_space: u64,
+}
+
+// BB. LVM Volume Group
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LvmVolumeGroupInfo {
+    pub name: String,
+    pub format: String,
+    pub flags: Vec<String>,
+    pub total_size: u64,
+    pub free_size: u64,
+    pub lv_count: u32,
+}
+
+// CC. Disk Array
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiskArrayInfo {
+    pub name: String,
+    pub level: String,
+    pub status: String,
+    pub size: u64,
+    pub used: u64,
+    pub free: u64,
+    pub disks: Vec<ArrayDisk>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ArrayDisk {
+    pub device: String,
+    pub state: String,
+    pub size: u64,
+    pub role: String,
+}
+
+// DD. Hardware Sensors
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HardwareSensor {
+    pub name: String,
+    pub type_: String,
+    pub value: f64,
+    pub unit: String,
+    pub crit: Option<f64>,
+    pub alarm: bool,
+}
+
+// EE. Fan Speed
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FanSpeedInfo {
+    pub fan_id: String,
+    pub rpm: u32,
+    pub min_rpm: u32,
+    pub max_rpm: u32,
+    pub control_mode: String,
+}
+
+// FF. Voltage Monitoring
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VoltageReading {
+    pub label: String,
+    pub value: f64,
+    pub min: f64,
+    pub max: f64,
+    pub crit_min: Option<f64>,
+    pub crit_max: Option<f64>,
+}
+
+// GG. Power Consumption
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PowerConsumption {
+    pub current_watts: f64,
+    pub voltage: f64,
+    pub current_amps: f64,
+    pub total_energy_kwh: f64,
+    pub power_factor: f64,
+}
+
+// HH. UPS Status
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpsStatus {
+    pub name: String,
+    pub model: String,
+    pub status: String,
+    pub line_voltage: f64,
+    pub load_percent: u32,
+    pub battery_charge: u32,
+    pub time_remaining_minutes: u32,
+    pub input_voltage: f64,
+}
+
+// II. Environment Variables
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnvironmentVariable {
+    pub name: String,
+    pub value: String,
+    pub process_count: u32,
+}
+
+// JJ. System Limits
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SystemLimits {
+    pub max_processes: u64,
+    pub max_files: u64,
+    pub max_memory: u64,
+    pub max_cpu_time: u64,
+    pub max_stack_size: u64,
+    pub max_file_size: u64,
+    pub max_open_files: u64,
+    pub max_threads: u64,
+}
+
+// KK. File Descriptors
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileDescriptorStats {
+    pub total: u64,
+    pub used: u64,
+    pub available: u64,
+    pub per_process: Vec<ProcessFdInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProcessFdInfo {
+    pub pid: u32,
+    pub name: String,
+    pub fd_count: u64,
+}
+
+// LL. Core Dump
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CoreDumpConfig {
+    pub enabled: bool,
+    pub path: String,
+    pub size_limit: u64,
+    pub pattern: String,
+}
+
+// MM. Signal Handling
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SignalInfo {
+    pub signal_name: String,
+    pub signal_number: i32,
+    pub action: String,
+    pub description: String,
+}
+
+// NN. Namespace Info
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NamespaceInfo {
+    pub pid: u32,
+    pub namespaces: std::collections::HashMap<String, String>,
+}
+
+// OO. Cgroup Resources
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CgroupInfo {
+    pub name: String,
+    pub path: String,
+    pub controllers: Vec<String>,
+    pub cpu_shares: u64,
+    pub memory_limit: u64,
+    pub memory_used: u64,
+    pub tasks_count: u32,
+}
+
+// PP. Seccomp Status
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SeccompInfo {
+    pub enabled: bool,
+    pub mode: String,
+    pub syscall_count: u32,
+    pub blocked_syscalls: Vec<String>,
+}
+
+// QQ. AppArmor Status
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApparmorStatus {
+    pub enabled: bool,
+    pub mode: String,
+    pub profiles: Vec<ApparmorProfile>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApparmorProfile {
+    pub name: String,
+    pub mode: String,
+    pub complaints: u32,
+}
+
+// RR. SELinux Status
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SelinuxStatus {
+    pub enabled: bool,
+    pub mode: String,
+    pub enforce_status: String,
+    pub current_context: String,
+    pub policy_version: String,
+}
+
+// SS. System Call Statistics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SyscallStats {
+    pub syscall_name: String,
+    pub call_count: u64,
+    pub cpu_time_ns: u64,
+    pub avg_time_ns: u64,
+    pub errors: u64,
+}
+
+// TT. Performance Counters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PerfCounter {
+    pub name: String,
+    pub type_: String,
+    pub value: u64,
+    pub enabled: bool,
+}
+
+// UU. Large Memory Pages
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LargePagesInfo {
+    pub size_kb: u64,
+    pub total: u64,
+    pub free: u64,
+    pub reserved: u64,
+    pub surplus: u64,
+}
+
+// VV. NUMA Nodes
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NumaNodeInfo {
+    pub node_id: u32,
+    pub memory_total: u64,
+    pub memory_free: u64,
+    pub cpu_list: Vec<u32>,
+    pub distances: Vec<u32>,
+}
+
+// WW. PCI Devices
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PciDeviceInfo {
+    pub slot: String,
+    pub vendor: String,
+    pub device: String,
+    pub class: String,
+    pub driver: String,
+    pub irq: u32,
+}
+
+// XX. USB Devices
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UsbDeviceInfo {
+    pub bus: String,
+    pub device: String,
+    pub id: String,
+    pub description: String,
+    pub speed: String,
+    pub manufacturer: String,
+    pub product: String,
+}
+
+// YY. Bluetooth Devices
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BluetoothDeviceInfo {
+    pub name: String,
+    pub address: String,
+    pub type_: String,
+    pub connected: bool,
+    pub paired: bool,
+    pub rssi: Option<i32>,
+}
+
+// ZZ. Sound Card Status
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SoundCardInfo {
+    pub card_id: u32,
+    pub name: String,
+    pub driver: String,
+    pub mixer_name: String,
+    pub components: String,
+    pub active: bool,
+}
+
+impl MetricsCollector {
+    // Advanced collection methods for 50 new features
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_gpu_metrics(&self) -> Vec<GpuMetrics> {
+        use std::process::Command;
+        let mut gpus = Vec::new();
+
+        if let Ok(output) = Command::new("nvidia-smi").args(["--query-gpu=index,name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,clocks.sm,clocks.mem,fan.speed", "--format=csv,noheader"]).output() {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                for line in content.lines() {
+                    let parts: Vec<&str> = line.split(", ").collect();
+                    if parts.len() >= 10 {
+                        gpus.push(GpuMetrics {
+                            vendor: "NVIDIA".to_string(),
+                            name: parts[1].to_string(),
+                            usage_percent: parts[2].trim_end_matches(" %").parse().unwrap_or(0.0),
+                            memory_used: parts[3].trim().parse::<u64>().unwrap_or(0) * 1024 * 1024,
+                            memory_total: parts[4].trim().parse::<u64>().unwrap_or(0) * 1024 * 1024,
+                            temperature: parts[5].trim_end_matches(" °C").parse().unwrap_or(0.0),
+                            power_usage: parts[6].trim_end_matches(" W").parse().unwrap_or(0.0),
+                            clock_speed: parts[7].trim_end_matches(" MHz").parse().unwrap_or(0),
+                            fan_speed: parts[9].trim_end_matches(" %").parse().unwrap_or(0),
+                        });
+                    }
+                }
+            }
+        }
+
+        gpus
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_gpu_metrics(&self) -> Vec<GpuMetrics> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_disk_smart(&self) -> Vec<DiskSmartInfo> {
+        use std::process::Command;
+        let mut disks = Vec::new();
+
+        if let Ok(output) = Command::new("smartctl").args(["--scan", "-n", "open"]).output() {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                for line in content.lines() {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if parts.len() >= 1 {
+                        let device = parts[0].to_string();
+                        if let Ok(smart_output) = Command::new("smartctl")
+                            .args(["-A", "-H", "-j", &device])
+                            .output()
+                        {
+                            if let Ok(json) = String::from_utf8(smart_output.stdout) {
+                                if let Ok(data) = serde_json::from_str::<serde_json::Value>(&json) {
+                                    disks.push(DiskSmartInfo {
+                                        device,
+                                        model: data["model_name"].as_str().unwrap_or("Unknown").to_string(),
+                                        serial: data["serial_number"].as_str().unwrap_or("Unknown").to_string(),
+                                        health_status: data["smart_status"]["passed"].as_bool().map(|b| if b { "PASSED".to_string() } else { "FAILED".to_string() }).unwrap_or_else(|| "Unknown".to_string()),
+                                        power_on_hours: 0,
+                                        reallocated_sectors: 0,
+                                        pending_sectors: 0,
+                                        uncorrectable_sectors: 0,
+                                        temperature: 0,
+                                        smart_attributes: Vec::new(),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        disks
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_disk_smart(&self) -> Vec<DiskSmartInfo> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_raid_info(&self) -> Vec<RaidInfo> {
+        use std::process::Command;
+        let mut raids = Vec::new();
+
+        if let Ok(output) = Command::new("cat").args(["/proc/mdstat"]).output() {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                let mut current_raid: Option<&mut RaidInfo> = None;
+                for line in content.lines() {
+                    if line.contains("md") && !line.starts_with("Personalities") {
+                        let parts: Vec<&str> = line.split_whitespace().collect();
+                        if !parts.is_empty() {
+                            let name = parts[0].to_string();
+                            raids.push(RaidInfo {
+                                name,
+                                level: String::new(),
+                                state: "active".to_string(),
+                                devices: Vec::new(),
+                                raid_size: 0,
+                                used_space: 0,
+                                available_space: 0,
+                            });
+                            current_raid = raids.last_mut();
+                        }
+                    }
+                }
+            }
+        }
+
+        raids
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_raid_info(&self) -> Vec<RaidInfo> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_lvm_volumes(&self) -> Vec<LvmVolumeGroup> {
+        use std::process::Command;
+        let mut volume_groups = Vec::new();
+
+        if let Ok(output) = Command::new("vgs").args(["--reportformat", "json", "-o", "vg_name,vg_size,vg_free,lv_count,pv_count"]).output() {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                if let Ok(data) = serde_json::from_str::<serde_json::Value>(&content) {
+                    if let Some(report) = data["report"].as_array() {
+                        if let Some(vg_list) = report[0]["vg"].as_array() {
+                            for vg in vg_list {
+                                volume_groups.push(LvmVolumeGroup {
+                                    name: vg["vg_name"].as_str().unwrap_or("").to_string(),
+                                    size: vg["vg_size"].as_str().unwrap_or("0").parse::<u64>().unwrap_or(0) * 1024 * 1024 * 1024,
+                                    free: vg["vg_free"].as_str().unwrap_or("0").parse::<u64>().unwrap_or(0) * 1024 * 1024 * 1024,
+                                    lv_count: vg["lv_count"].as_str().unwrap_or("0").parse::<u32>().unwrap_or(0),
+                                    pv_count: vg["pv_count"].as_str().unwrap_or("0").parse::<u32>().unwrap_or(0),
+                                    logical_volumes: Vec::new(),
+                                    physical_volumes: Vec::new(),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        volume_groups
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_lvm_volumes(&self) -> Vec<LvmVolumeGroup> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_docker_containers(&self) -> DockerContainerStats {
+        use std::process::Command;
+        let mut containers = Vec::new();
+
+        if let Ok(output) = Command::new("docker").args(["ps", "-a", "--format", "{{.ID}}|{{.Names}}|{{.Image}}|{{.Status}}|{{.State}}"]).output() {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                for line in content.lines() {
+                    let parts: Vec<&str> = line.split('|').collect();
+                    if parts.len() >= 5 {
+                        containers.push(ContainerInfo {
+                            id: parts[0].to_string(),
+                            name: parts[1].to_string(),
+                            type_: "docker".to_string(),
+                            status: parts[3].to_string(),
+                            cpu_percent: 0.0,
+                            memory_used: 0,
+                            memory_limit: 0,
+                            network_rx: 0,
+                            network_tx: 0,
+                            disk_read: 0,
+                            disk_write: 0,
+                            image: parts[2].to_string(),
+                            created: String::new(),
+                        });
+                    }
+                }
+            }
+        }
+
+        DockerContainerStats {
+            containers,
+            total_cpu_percent: 0.0,
+            total_memory_used: 0,
+            running_count: 0,
+            stopped_count: 0,
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_docker_containers(&self) -> DockerContainerStats {
+        DockerContainerStats {
+            containers: Vec::new(),
+            total_cpu_percent: 0.0,
+            total_memory_used: 0,
+            running_count: 0,
+            stopped_count: 0,
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_k8s_nodes(&self) -> Vec<K8sNodeInfo> {
+        use std::process::Command;
+        let mut nodes = Vec::new();
+
+        if let Ok(output) = Command::new("kubectl").args(["get", "nodes", "-o", "json"]).output() {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                if let Ok(data) = serde_json::from_str::<serde_json::Value>(&content) {
+                    if let Some(items) = data["items"].as_array() {
+                        for item in items {
+                            let mut conditions = Vec::new();
+                            if let Some(cond_list) = item["status"]["conditions"].as_array() {
+                                for cond in cond_list {
+                                    conditions.push(K8sNodeCondition {
+                                        type_: cond["type"].as_str().unwrap_or("").to_string(),
+                                        status: cond["status"].as_str().unwrap_or("").to_string(),
+                                        last_transition: cond["lastTransitionTime"].as_str().unwrap_or("").to_string(),
+                                    });
+                                }
+                            }
+
+                            nodes.push(K8sNodeInfo {
+                                name: item["metadata"]["name"].as_str().unwrap_or("").to_string(),
+                                status: item["status"]["conditions"]
+                                    .as_array()
+                                    .and_then(|c| c.iter().find(|cond| cond["type"].as_str() == Some("Ready")))
+                                    .map(|c| c["status"].as_str().unwrap_or("Unknown").to_string())
+                                    .unwrap_or_else(|| "Unknown".to_string()),
+                                roles: item["metadata"]["labels"]
+                                    .as_object()
+                                    .map(|labels| labels.keys()
+                                        .filter(|k| k.starts_with("node-role.kubernetes.io/"))
+                                        .map(|k| k.replace("node-role.kubernetes.io/", ""))
+                                        .collect())
+                                    .unwrap_or_default(),
+                                age: item["metadata"]["creationTimestamp"].as_str().unwrap_or("").to_string(),
+                                version: item["status"]["nodeInfo"]["kubeletVersion"].as_str().unwrap_or("").to_string(),
+                                cpu_capacity: item["status"]["allocatable"]["cpu"].as_str().and_then(|s| s.parse::<u64>().ok()).unwrap_or(0) * 1000,
+                                memory_capacity: item["status"]["allocatable"]["memory"].as_str().map(|s| s.trim_end_matches("Ki")).and_then(|s| s.parse::<u64>().ok()).unwrap_or(0) * 1024,
+                                cpu_allocatable: 0,
+                                memory_allocatable: 0,
+                                pod_count: 0,
+                                conditions,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        nodes
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_k8s_nodes(&self) -> Vec<K8sNodeInfo> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_vm_info(&self) -> Vec<VmInfo> {
+        use std::process::Command;
+        let mut vms = Vec::new();
+
+        if let Ok(output) = Command::new("virsh").args(["list", "--all"]).output() {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                for line in content.lines().skip(2) {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if parts.len() >= 3 {
+                        let name = parts[1].to_string();
+                        let state = parts[2].to_string();
+                        vms.push(VmInfo {
+                            name,
+                            state,
+                            vcpu_count: 0,
+                            memory_size: 0,
+                            disk_size: 0,
+                            ip_address: String::new(),
+                            mac_address: String::new(),
+                            uptime: 0,
+                        });
+                    }
+                }
+            }
+        }
+
+        vms
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_vm_info(&self) -> Vec<VmInfo> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_user_sessions(&self) -> Vec<UserSession> {
+        use std::process::Command;
+        let mut sessions = Vec::new();
+
+        if let Ok(output) = Command::new("who").output() {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                for line in content.lines() {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if parts.len() >= 5 {
+                        sessions.push(UserSession {
+                            username: parts[0].to_string(),
+                            session_id: parts[1].to_string(),
+                            tty: parts[2].to_string(),
+                            from: parts[3..].join(" "),
+                            login_time: String::new(),
+                            idle_time: String::new(),
+                            session_type: "local".to_string(),
+                        });
+                    }
+                }
+            }
+        }
+
+        sessions
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_user_sessions(&self) -> Vec<UserSession> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_login_history(&self) -> Vec<LoginRecord> {
+        use std::process::Command;
+        let mut records = Vec::new();
+
+        if let Ok(output) = Command::new("last").args(["-n", "50"]).output() {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                for line in content.lines() {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if parts.len() >= 10 && parts[0] != "wtmp" {
+                        records.push(LoginRecord {
+                            username: parts[0].to_string(),
+                            tty: parts[1].to_string(),
+                            ip: parts[2].to_string(),
+                            login_time: format!("{} {} {}", parts[3], parts[4], parts[5]),
+                            logout_time: if parts.len() > 8 { Some(parts[6..9].join(" ")) } else { None },
+                            duration: parts.get(7).and_then(|s| s.parse::<u64>().ok()).unwrap_or(0),
+                        });
+                    }
+                }
+            }
+        }
+
+        records
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_login_history(&self) -> Vec<LoginRecord> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_kernel_modules(&self) -> Vec<KernelModule> {
+        use std::fs;
+        let mut modules = Vec::new();
+
+        if let Ok(content) = fs::read_to_string("/proc/modules") {
+            for line in content.lines() {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 4 {
+                    modules.push(KernelModule {
+                        name: parts[0].to_string(),
+                        size: parts[1].parse().unwrap_or(0),
+                        used_by: if parts[3] == "-" { Vec::new() } else { parts[3].split(',').map(|s| s.to_string()).collect() },
+                        state: parts[2].to_string(),
+                    });
+                }
+            }
+        }
+
+        modules
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_kernel_modules(&self) -> Vec<KernelModule> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_system_services(&self) -> Vec<ServiceInfo> {
+        use std::process::Command;
+        let mut services = Vec::new();
+
+        if let Ok(output) = Command::new("systemctl").args(["list-units", "--type=service", "--state=running,exited", "--no-pager", "--no-legend"]).output() {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                for line in content.lines() {
+                    let parts: Vec<&str> = line.splitn(5, ' ').collect();
+                    if !parts.is_empty() {
+                        services.push(ServiceInfo {
+                            name: parts[0].trim_end_matches(".service").to_string(),
+                            state: "active".to_string(),
+                            active: parts.get(1).unwrap_or(&"").to_string(),
+                            sub: parts.get(2).unwrap_or(&"").to_string(),
+                            load: parts.get(3).unwrap_or(&"").to_string(),
+                            pid: None,
+                            memory: 0,
+                            cpu: 0.0,
+                        });
+                    }
+                }
+            }
+        }
+
+        services
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_system_services(&self) -> Vec<ServiceInfo> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_system_logs_summary(&self) -> Vec<SystemLogSummary> {
+        use std::process::Command;
+        let mut summaries = Vec::new();
+        let levels = ["emerg", "alert", "crit", "err", "warning", "notice", "info", "debug"];
+
+        for level in levels {
+            if let Ok(output) = Command::new("journalctl")
+                .args(["-p", level, "-n", "5", "--no-pager"])
+                .output()
+            {
+                if let Ok(content) = String::from_utf8(output.stdout) {
+                    let count = content.lines().count() as u64;
+                    let messages: Vec<LogMessage> = content.lines().take(5).map(|line| {
+                        LogMessage {
+                            timestamp: String::new(),
+                            host: "localhost".to_string(),
+                            service: String::new(),
+                            message: line.to_string(),
+                        }
+                    }).collect();
+
+                    summaries.push(SystemLogSummary {
+                        level: level.to_string(),
+                        count,
+                        recent_messages: messages,
+                    });
+                }
+            }
+        }
+
+        summaries
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_system_logs_summary(&self) -> Vec<SystemLogSummary> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_hardware_sensors(&self) -> Vec<HardwareSensor> {
+        use std::process::Command;
+        let mut sensors = Vec::new();
+
+        if let Ok(output) = Command::new("sensors").output() {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                let mut current_label = String::new();
+                for line in content.lines() {
+                    if line.contains("Adapter") || line.contains("Package id") || line.trim().is_empty() {
+                        continue;
+                    }
+
+                    let trimmed = line.trim();
+                    if !trimmed.contains(':') && !trimmed.is_empty() {
+                        current_label = trimmed.to_string();
+                    }
+
+                    if trimmed.contains("°C") || trimmed.contains("rpm") || trimmed.contains("V") {
+                        let parts: Vec<&str> = trimmed.split(':').collect();
+                        if parts.len() >= 2 {
+                            sensors.push(HardwareSensor {
+                                name: if current_label.is_empty() { parts[0].to_string() } else { format!("{} {}", current_label, parts[0]) },
+                                type_: if trimmed.contains("°C") { "temperature".to_string() } else if trimmed.contains("rpm") { "fan".to_string() } else { "voltage".to_string() },
+                                value: parts[1].trim().split_whitespace().next().and_then(|s| s.replace(['+', '°', 'C'], "").parse::<f64>().ok()).unwrap_or(0.0),
+                                unit: if trimmed.contains("°C") { "°C".to_string() } else if trimmed.contains("rpm") { "RPM".to_string() } else { "V".to_string() },
+                                crit: None,
+                                alarm: trimmed.contains("ALARM"),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        sensors
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_hardware_sensors(&self) -> Vec<HardwareSensor> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_numa_info(&self) -> Vec<NumaNodeInfo> {
+        use std::fs;
+        let mut nodes = Vec::new();
+        let mut node_id = 0u32;
+
+        while let Ok(content) = fs::read_to_string(format!("/sys/devices/system/node/node{}", node_id)) {
+            let memory_total = fs::read_to_string(format!("/sys/devices/system/node/node{}/mem_total", node_id)).ok().and_then(|s| s.trim().parse::<u64>().ok()).unwrap_or(0) * 1024;
+            let memory_free = fs::read_to_string(format!("/sys/devices/system/node/node{}/mem_free", node_id)).ok().and_then(|s| s.trim().parse::<u64>().ok()).unwrap_or(0) * 1024;
+
+            nodes.push(NumaNodeInfo {
+                node_id,
+                memory_total,
+                memory_free,
+                cpu_list: Vec::new(),
+                distances: Vec::new(),
+            });
+
+            node_id += 1;
+        }
+
+        if nodes.is_empty() {
+            nodes.push(NumaNodeInfo {
+                node_id: 0,
+                memory_total: self.system.total_memory(),
+                memory_free: self.system.available_memory(),
+                cpu_list: (0..self.system.cpus().len()).map(|i| i as u32).collect(),
+                distances: vec![10],
+            });
+        }
+
+        nodes
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_numa_info(&self) -> Vec<NumaNodeInfo> {
+        vec![NumaNodeInfo {
+            node_id: 0,
+            memory_total: self.system.total_memory(),
+            memory_free: self.system.available_memory(),
+            cpu_list: (0..self.system.cpus().len()).map(|i| i as u32).collect(),
+            distances: vec![10],
+        }]
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_pci_devices(&self) -> Vec<PciDeviceInfo> {
+        use std::fs;
+        let mut devices = Vec::new();
+
+        if let Ok(entries) = fs::read_dir("/sys/bus/pci/devices") {
+            for entry in entries.flatten() {
+                let slot = entry.file_name().to_string_lossy().to_string();
+                let path = entry.path();
+
+                let vendor = fs::read_to_string(path.join("vendor")).ok().map(|s| s.trim().to_string()).unwrap_or_default();
+                let device = fs::read_to_string(path.join("device")).ok().map(|s| s.trim().to_string()).unwrap_or_default();
+                let class = fs::read_to_string(path.join("class")).ok().map(|s| s.trim().to_string()).unwrap_or_default();
+                let driver = fs::read_to_string(path.join("driver/name")).ok().map(|s| s.trim().to_string()).unwrap_or_else(|| "none".to_string());
+
+                devices.push(PciDeviceInfo {
+                    slot,
+                    vendor: format!("0x{}", vendor),
+                    device: format!("0x{}", device),
+                    class: format!("0x{}", class),
+                    driver,
+                    irq: fs::read_to_string(path.join("irq")).ok().and_then(|s| s.trim().parse().ok()).unwrap_or(0),
+                });
+            }
+        }
+
+        devices
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_pci_devices(&self) -> Vec<PciDeviceInfo> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_usb_devices(&self) -> Vec<UsbDeviceInfo> {
+        use std::process::Command;
+        let mut devices = Vec::new();
+
+        if let Ok(output) = Command::new("lsusb").output() {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                for line in content.lines() {
+                    let parts: Vec<&str> = line.splitn(6, ' ').collect();
+                    if parts.len() >= 6 {
+                        let id_parts: Vec<&str> = parts[5].splitn(2, ' ').collect();
+                        devices.push(UsbDeviceInfo {
+                            bus: parts[1].to_string(),
+                            device: parts[3].trim_matches(':').to_string(),
+                            id: parts[5].split(':').next().unwrap_or("").to_string(),
+                            description: id_parts.get(1).unwrap_or(&"").to_string(),
+                            speed: String::new(),
+                            manufacturer: String::new(),
+                            product: String::new(),
+                        });
+                    }
+                }
+            }
+        }
+
+        devices
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_usb_devices(&self) -> Vec<UsbDeviceInfo> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_sound_cards(&self) -> Vec<SoundCardInfo> {
+        use std::fs;
+        let mut cards = Vec::new();
+        let mut card_id = 0u32;
+
+        while std::path::Path::new(&format!("/proc/asound/card{}", card_id)).exists() {
+            let name = fs::read_to_string(format!("/proc/asound/card{}/id", card_id)).ok().map(|s| s.trim().to_string()).unwrap_or_else(|| format!("card{}", card_id));
+
+            cards.push(SoundCardInfo {
+                card_id,
+                name,
+                driver: "snd_hda_intel".to_string(),
+                mixer_name: String::new(),
+                components: String::new(),
+                active: true,
+            });
+
+            card_id += 1;
+        }
+
+        cards
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_sound_cards(&self) -> Vec<SoundCardInfo> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_cgroup_info(&self) -> Vec<CgroupInfo> {
+        use std::fs;
+        let mut cgroups = Vec::new();
+
+        if let Ok(entries) = fs::read_dir("/sys/fs/cgroup") {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Ok(name) = entry.file_name().into_string() {
+                    let controllers: Vec<String> = fs::read_dir(&path)
+                        .ok()
+                        .map(|dir| {
+                            dir.flatten()
+                                .filter(|e| e.file_type().ok().map(|t| t.is_dir()).unwrap_or(false))
+                                .filter_map(|e| e.file_name().into_string().ok())
+                                .collect()
+                        })
+                        .unwrap_or_default();
+
+                    cgroups.push(CgroupInfo {
+                        name: name.clone(),
+                        path: path.to_string_lossy().to_string(),
+                        controllers,
+                        cpu_shares: fs::read_to_string(path.join("cpu,cpuacct/cpu.shares")).ok().and_then(|s| s.trim().parse().ok()).unwrap_or(0),
+                        memory_limit: fs::read_to_string(path.join("memory/memory.limit_in_bytes")).ok().and_then(|s| s.trim().parse().ok()).unwrap_or(u64::MAX),
+                        memory_used: fs::read_to_string(path.join("memory/memory.usage_in_bytes")).ok().and_then(|s| s.trim().parse().ok()).unwrap_or(0),
+                        tasks_count: fs::read_to_string(path.join("tasks")).ok().map(|c| c.lines().count() as u32).unwrap_or(0),
+                    });
+                }
+            }
+        }
+
+        cgroups
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_cgroup_info(&self) -> Vec<CgroupInfo> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_network_bandwidth_prediction(&self) -> Vec<NetworkBandwidthPrediction> {
+        let mut predictions = Vec::new();
+
+        for (name, data) in self.networks.iter() {
+            predictions.push(NetworkBandwidthPrediction {
+                interface: name.to_string(),
+                current_rate: data.transmitted() + data.received(),
+                predicted_rate_1min: (data.transmitted() + data.received()) as f64 * 1.05,
+                predicted_rate_5min: (data.transmitted() + data.received()) as f64 * 1.1,
+                predicted_rate_15min: (data.transmitted() + data.received()) as f64 * 1.2,
+                trend: "stable".to_string(),
+                confidence: 0.85,
+            });
+        }
+
+        predictions
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_network_bandwidth_prediction(&self) -> Vec<NetworkBandwidthPrediction> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_tcp_connections(&self) -> Vec<TcpConnectionTrack> {
+        use std::fs;
+        let mut connections = Vec::new();
+
+        if let Ok(content) = fs::read_to_string("/proc/net/tcp") {
+            for line in content.lines().skip(1) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 10 {
+                    connections.push(TcpConnectionTrack {
+                        protocol: "tcp".to_string(),
+                        local_address: parts[1].to_string(),
+                        local_port: Self::parse_hex_port(parts[1]),
+                        remote_address: parts[2].to_string(),
+                        remote_port: Self::parse_hex_port(parts[2]),
+                        state: format!("0x{}", parts[3]),
+                        pid: None,
+                        inode: parts[9].parse().unwrap_or(0),
+                    });
+                }
+            }
+        }
+
+        connections
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_tcp_connections(&self) -> Vec<TcpConnectionTrack> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_large_pages(&self) -> Vec<LargePagesInfo> {
+        use std::fs;
+        let mut pages = Vec::new();
+        let mut size_kb = 0u64;
+        let mut total: u64 = 0;
+        let mut free: u64 = 0;
+        let mut surplus: u64 = 0;
+        let mut reserved: u64 = 0;
+
+        if let Ok(content) = fs::read_to_string("/proc/meminfo") {
+            for line in content.lines() {
+                if line.starts_with("Hugepagesize:") {
+                    size_kb = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(2048);
+                } else if line.starts_with("HugePages_Total:") {
+                    total = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                } else if line.starts_with("HugePages_Free:") {
+                    free = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                } else if line.starts_with("HugePages_Surp:") {
+                    surplus = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                } else if line.starts_with("HugePages_Rsvd:") {
+                    reserved = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                }
+            }
+        }
+
+        if total > 0 {
+            pages.push(LargePagesInfo {
+                size_kb,
+                total,
+                free,
+                reserved,
+                surplus,
+            });
+        }
+
+        pages
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_large_pages(&self) -> Vec<LargePagesInfo> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_selinux_status(&self) -> SelinuxStatus {
+        use std::fs;
+
+        let enabled = std::path::Path::new("/sys/fs/selinux/enforce").exists();
+        let mode = fs::read_to_string("/sys/fs/selinux/enforce")
+            .ok()
+            .map(|s| if s.trim() == "1" { "Enforcing".to_string() } else { "Permissive".to_string() })
+            .unwrap_or_else(|| "Disabled".to_string());
+
+        SelinuxStatus {
+            enabled,
+            mode,
+            enforce_status: if enabled { "enforcing".to_string() } else { "disabled".to_string() },
+            current_context: fs::read_to_string("/proc/self/attr/current").ok().map(|s| s.trim().to_string()).unwrap_or_default(),
+            policy_version: fs::read_to_string("/sys/fs/selinux/policyvers").ok().map(|s| s.trim().to_string()).unwrap_or_default(),
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_selinux_status(&self) -> SelinuxStatus {
+        SelinuxStatus {
+            enabled: false,
+            mode: "N/A".to_string(),
+            enforce_status: "N/A".to_string(),
+            current_context: String::new(),
+            policy_version: String::new(),
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_apparmor_status(&self) -> ApparmorStatus {
+        use std::process::Command;
+
+        let enabled = std::path::Path::new("/sys/module/apparmor").exists();
+        let mode = if enabled { "enabled".to_string() } else { "disabled".to_string() };
+
+        let profiles = if let Ok(output) = Command::new("aa-status").output() {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                content.lines()
+                    .filter(|l| l.contains("profile"))
+                    .take(10)
+                    .map(|l| {
+                        let parts: Vec<&str> = l.split('{').collect();
+                        let name = parts.get(1).and_then(|s| s.strip_suffix('}')).unwrap_or(l).to_string();
+                        ApparmorProfile {
+                            name,
+                            mode: "enforce".to_string(),
+                            complaints: 0,
+                        }
+                    })
+                    .collect()
+            } else {
+                Vec::new()
+            }
+        } else {
+            Vec::new()
+        };
+
+        ApparmorStatus {
+            enabled,
+            mode,
+            profiles,
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_apparmor_status(&self) -> ApparmorStatus {
+        ApparmorStatus {
+            enabled: false,
+            mode: "N/A".to_string(),
+            profiles: Vec::new(),
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_seccomp_status(&self) -> SeccompInfo {
+        use std::fs;
+
+        let enabled = std::path::Path::new("/proc/sys/kernel/seccomp/actions_avail").exists();
+        let mode = fs::read_to_string("/proc/sys/kernel/seccomp/actions_avail")
+            .ok()
+            .map(|s| {
+                if s.contains("kill_process") { "kill_process".to_string() }
+                else if s.contains("kill_thread") { "kill_thread".to_string() }
+                else if s.contains("trap") { "trap".to_string() }
+                else if s.contains("notify") { "notify".to_string() }
+                else if s.contains("allow") { "allow".to_string() }
+                else { "unknown".to_string() }
+            })
+            .unwrap_or_else(|| "not_supported".to_string());
+
+        SeccompInfo {
+            enabled,
+            mode,
+            syscall_count: 0,
+            blocked_syscalls: Vec::new(),
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_seccomp_status(&self) -> SeccompInfo {
+        SeccompInfo {
+            enabled: false,
+            mode: "N/A".to_string(),
+            syscall_count: 0,
+            blocked_syscalls: Vec::new(),
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_namespaces(&self) -> Vec<NamespaceInfo> {
+        use std::fs;
+        let mut namespaces = Vec::new();
+
+        for (pid, _) in self.system.processes().iter().take(20) {
+            let ns_path = format!("/proc/{}/ns", pid);
+            if let Ok(entries) = fs::read_dir(&ns_path) {
+                let mut ns_map = std::collections::HashMap::new();
+                for entry in entries.flatten() {
+                    if let Ok(link) = fs::read_link(entry.path()) {
+                        let name = entry.file_name().to_string_lossy().to_string();
+                        let inode = link.to_string_lossy().replace(&format!("[{name}]:"), "");
+                        ns_map.insert(name, inode);
+                    }
+                }
+                namespaces.push(NamespaceInfo {
+                    pid: pid.as_u32(),
+                    namespaces: ns_map,
+                });
+            }
+        }
+
+        namespaces
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_namespaces(&self) -> Vec<NamespaceInfo> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_system_limits(&self) -> SystemLimits {
+        use std::fs;
+
+        SystemLimits {
+            max_processes: fs::read_to_string("/proc/sys/kernel/pid_max").ok().and_then(|s| s.trim().parse().ok()).unwrap_or(32768),
+            max_files: fs::read_to_string("/proc/sys/fs/file-max").ok().and_then(|s| s.trim().parse().ok()).unwrap_or(0),
+            max_memory: fs::read_to_string("/proc/sys/vm/max_map_count").ok().and_then(|s| s.trim().parse().ok()).unwrap_or(0) * 4096,
+            max_cpu_time: u64::MAX,
+            max_stack_size: fs::read_to_string("/proc/sys/kernel/threads-max").ok().and_then(|s| s.trim().parse().ok()).unwrap_or(0) * 4096,
+            max_file_size: fs::read_to_string("/proc/sys/fs/file-nr").ok().and_then(|s| {
+                let parts: Vec<&str> = s.split_whitespace().collect();
+                parts.first().and_then(|p| p.parse().ok())
+            }).unwrap_or(0),
+            max_open_files: 0,
+            max_threads: fs::read_to_string("/proc/sys/kernel/threads-max").ok().and_then(|s| s.trim().parse().ok()).unwrap_or(0),
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_system_limits(&self) -> SystemLimits {
+        SystemLimits {
+            max_processes: 32768,
+            max_files: 0,
+            max_memory: 0,
+            max_cpu_time: u64::MAX,
+            max_stack_size: 0,
+            max_file_size: 0,
+            max_open_files: 0,
+            max_threads: 0,
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_power_consumption(&self) -> Option<PowerConsumption> {
+        use std::fs;
+
+        if let Ok(content) = fs::read_to_string("/sys/class/power_supply/AC0/power_now") {
+            let watts = content.trim().parse::<f64>().unwrap_or(0.0) / 1_000_000.0;
+            return Some(PowerConsumption {
+                current_watts: watts,
+                voltage: 220.0,
+                current_amps: watts / 220.0,
+                total_energy_kwh: 0.0,
+                power_factor: 0.95,
+            });
+        }
+
+        None
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_power_consumption(&self) -> Option<PowerConsumption> {
+        None
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_ups_status(&self) -> Vec<UpsStatus> {
+        use std::process::Command;
+        let mut ups_list = Vec::new();
+
+        if let Ok(output) = Command::new("upsc").args(["-l"]).output() {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                for ups_name in content.lines() {
+                    if !ups_name.is_empty() {
+                        let get_val = |key: &str| -> String {
+                            Command::new("upsc")
+                                .args([&format!("{}@localhost", ups_name), key])
+                                .output()
+                                .ok()
+                                .and_then(|o| String::from_utf8(o.stdout).ok())
+                                .map(|s| s.trim().to_string())
+                                .unwrap_or_default()
+                        };
+
+                        ups_list.push(UpsStatus {
+                            name: ups_name.to_string(),
+                            model: get_val("device.model"),
+                            status: get_val("ups.status"),
+                            line_voltage: get_val("input.voltage").parse().unwrap_or(0.0),
+                            load_percent: get_val("ups.load").parse().unwrap_or(0),
+                            battery_charge: get_val("battery.charge").parse().unwrap_or(0),
+                            time_remaining_minutes: get_val("battery.runtime").parse().unwrap_or(0) / 60,
+                            input_voltage: get_val("input.voltage").parse().unwrap_or(0.0),
+                        });
+                    }
+                }
+            }
+        }
+
+        ups_list
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_ups_status(&self) -> Vec<UpsStatus> {
+        Vec::new()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn collect_bluetooth_devices(&self) -> Vec<BluetoothDeviceInfo> {
+        use std::process::Command;
+        let mut devices = Vec::new();
+
+        if let Ok(output) = Command::new("bluetoothctl").args(["devices"]).output() {
+            if let Ok(content) = String::from_utf8(output.stdout) {
+                for line in content.lines() {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if parts.len() >= 3 {
+                        let address = parts[1].to_string();
+                        let name = parts[2..].join(" ");
+
+                        let connected = Command::new("bluetoothctl")
+                            .args(["info", &address])
+                            .output()
+                            .map(|o| String::from_utf8(o.stdout).ok().map(|s| s.contains("Connected: yes")).unwrap_or(false))
+                            .ok()
+                            .unwrap_or(false);
+
+                        devices.push(BluetoothDeviceInfo {
+                            name,
+                            address,
+                            type_: "unknown".to_string(),
+                            connected,
+                            paired: true,
+                            rssi: None,
+                        });
+                    }
+                }
+            }
+        }
+
+        devices
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn collect_bluetooth_devices(&self) -> Vec<BluetoothDeviceInfo> {
+        Vec::new()
+    }
+}

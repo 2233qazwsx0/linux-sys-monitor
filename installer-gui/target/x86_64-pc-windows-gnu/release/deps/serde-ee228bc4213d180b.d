@@ -1,0 +1,14 @@
+/workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/deps/serde-ee228bc4213d180b.d: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/build/serde-7c03ac8e65f11be5/out/private.rs
+
+/workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/deps/libserde-ee228bc4213d180b.rlib: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/build/serde-7c03ac8e65f11be5/out/private.rs
+
+/workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/deps/libserde-ee228bc4213d180b.rmeta: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/build/serde-7c03ac8e65f11be5/out/private.rs
+
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/build/serde-7c03ac8e65f11be5/out/private.rs:
+
+# env-dep:OUT_DIR=/workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/build/serde-7c03ac8e65f11be5/out

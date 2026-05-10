@@ -1,0 +1,14 @@
+/workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/deps/thiserror-6d0044033f469b9a.d: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/aserror.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/display.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/var.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/private.rs /workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/build/thiserror-972d89366d088533/out/private.rs
+
+/workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/deps/libthiserror-6d0044033f469b9a.rlib: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/aserror.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/display.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/var.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/private.rs /workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/build/thiserror-972d89366d088533/out/private.rs
+
+/workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/deps/libthiserror-6d0044033f469b9a.rmeta: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/aserror.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/display.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/var.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/private.rs /workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/build/thiserror-972d89366d088533/out/private.rs
+
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/lib.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/aserror.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/display.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/var.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.18/src/private.rs:
+/workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/build/thiserror-972d89366d088533/out/private.rs:
+
+# env-dep:OUT_DIR=/workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/build/thiserror-972d89366d088533/out

@@ -1,0 +1,12 @@
+/workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/deps/error_code-495fb5aa5a62480b.d: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/defs.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/types.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/utils.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/posix.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/system.rs
+
+/workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/deps/liberror_code-495fb5aa5a62480b.rlib: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/defs.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/types.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/utils.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/posix.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/system.rs
+
+/workspace/linux-system-monitor/installer-gui/target/x86_64-pc-windows-gnu/release/deps/liberror_code-495fb5aa5a62480b.rmeta: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/defs.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/types.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/utils.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/posix.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/system.rs
+
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/lib.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/defs.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/types.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/utils.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/posix.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/error-code-3.3.2/src/system.rs:

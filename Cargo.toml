@@ -1,6 +1,6 @@
 [package]
 name = "linux-system-monitor"
-version = "4.0.0"
+version = "5.0.0"
 edition = "2021"
 description = "Ultra-lightweight real-time system monitoring"
 license = "MIT"
