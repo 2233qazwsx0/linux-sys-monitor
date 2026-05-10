@@ -11,7 +11,7 @@ LDFLAGS = -lkernel32 -luser32 -lshell32 -lshfolder -lcomdlg32 -lcomctl32 \
 WINVER = 0x0601
 WINVERFLAGS = -D_WIN32_WINNT=$(WINVER) -DWINVER=$(WINVER)
 
-INCLUDES = -I./src -I./res
+INCLUDES = -I./src
 
 SRCDIR = src
 RELEASEDIR = release
@@ -22,7 +22,7 @@ OBJECTS = $(OBJDIR)/main.o $(OBJDIR)/window.o $(OBJDIR)/install.o $(OBJDIR)/app.
 
 TARGET = $(RELEASEDIR)/installer.exe
 
-.PHONY: all clean dirs
+.PHONY: all clean dirs i686 x86_64
 
 all: dirs $(TARGET)
 
@@ -46,8 +46,15 @@ $(RELEASEDIR)/installer.exe: $(OBJECTS)
 	$(CC) $(CXXFLAGS) $(OBJECTS) $(LDFLAGS) -mwindows -o $@
 	$(STRIP) $@
 
+i686:
+	@mkdir -p $(OBJDIR)-i686 $(RELEASEDIR)-i686
+	@make -e CC=i686-w64-mingw32-g++ WINDRES=i686-w64-mingw32-windres STRIP=i686-w64-mingw32-strip OBJDIR=$(OBJDIR)-i686 RELEASEDIR=$(RELEASEDIR)-i686 TARGET=$(RELEASEDIR)-i686/installer.exe clean all
+
+x86_64:
+	@make clean all
+
 clean:
-	rm -rf $(OBJDIR) $(RELEASEDIR)
+	rm -rf $(OBJDIR) $(OBJDIR)-i686 $(RELEASEDIR) $(RELEASEDIR)-i686
 
 rebuild: clean all
 
