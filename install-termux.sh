@@ -15,51 +15,49 @@ echo ""
 
 check_dependencies() {
     echo "[1/4] 检查依赖..."
-    
+
     if ! command -v cargo &> /dev/null; then
         echo "  安装 Rust 工具链..."
         pkg update && pkg install -y rust
     fi
-    
+
     if ! command -v termux-battery-status &> /dev/null; then
         echo "  安装 Termux API (电池/传感器等功能需要)..."
         pkg update && pkg install -y termux-api
     fi
-    
+
     if ! command -v git &> /dev/null; then
         echo "  安装 Git..."
         pkg update && pkg install -y git
     fi
-    
+
     echo "  依赖检查完成 ✓"
 }
 
 clone_and_build() {
     echo "[2/4] 构建程序..."
-    
+
     WORK_DIR="$HOME/linux-sys-monitor-build"
-    mkdir -p "$WORK_DIR"
-    cd "$WORK_DIR"
-    
-    if [ ! -d ".git" ]; then
-        rm -rf "$WORK_DIR"
+
+    if [ ! -d "$WORK_DIR/.git" ]; then
         echo "  克隆源码仓库 (termux 分支)..."
+        rm -rf "$WORK_DIR"
         git clone -b termux --depth 1 https://github.com/2233qazwsx0/linux-sys-monitor.git "$WORK_DIR"
     fi
-    
+
     cd "$WORK_DIR"
     git fetch origin termux
     git reset --hard origin/termux
-    
+
     echo "  编译中 (首次可能需要几分钟)..."
     cargo build --release --features termux 2>/dev/null || \
     cargo build --features termux
-    
+
     mkdir -p "$PREFIX/bin"
     cp target/*/release/$BINARY_NAME "$PREFIX/bin/" 2>/dev/null || \
     cp target/release/$BINARY_NAME "$PREFIX/bin/"
     chmod +x "$PREFIX/bin/$BINARY_NAME"
-    
+
     echo "  构建完成 ✓"
 }
 
@@ -90,7 +88,7 @@ run_monitor() {
     echo "  Q       - 退出"
     echo "========================================"
     echo ""
-    
+
     termux-monitor
 }
 

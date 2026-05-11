@@ -304,16 +304,15 @@ impl TermuxMonitor {
         let mut processes: Vec<_> = self.system.processes().iter()
             .map(|(pid, p)| {
                 (
-                    p.name().to_string_lossy().into_owned(),
+                    p.name().to_string(),
                     pid.as_u32(),
                     p.cpu_usage(),
                     p.memory(),
-                    if total_mem > 0.0 { p.memory() as f32 / total_mem * 100.0 } else { 0.0 },
                 )
             })
             .collect();
         processes.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
-        processes.into_iter().take(count).map(|(n, p, c, m)| (n, p, c, m)).collect()
+        processes.into_iter().take(count).collect()
     }
 
     fn get_network_stats(&mut self) -> (u64, u64) {
@@ -622,7 +621,7 @@ fn render(monitor: &mut TermuxMonitor, width: usize) {
     
     println!("\x1b[1;36m╔{}╗\x1b[0m", double_sep);
     println!("\x1b[1;36m║\x1b[0m \x1b[1;33m◆ Termux System Monitor v5.0.0\x1b[0m");
-    println!("\x1b[1;36m║\x[0m \x1b[90m{}\x1b[0m | \x1b[35mUp: {}\x1b[0m | \x1b[33mLoad: {:.2}\x1b[0m | \x1b[32mTorch: {}\x1b[0m \x1b[36m║", 
+    println!("\x1b[1;36m║\x1b[0m \x1b[90m{}\x1b[0m | \x1b[35mUp: {}\x1b[0m | \x1b[33mLoad: {:.2}\x1b[0m | \x1b[32mTorch: {}\x1b[0m \x1b[36m║", 
         hostname, format_uptime(uptime), load1, if torch_on { "ON" } else { "OFF" });
     println!("\x1b[1;36m╚{}╝\x1b[0m", double_sep);
     
@@ -649,7 +648,7 @@ fn render(monitor: &mut TermuxMonitor, width: usize) {
         cpu_color, cpu_avg, "\x1b[0m", cpu_bar, cpu_count);
     println!("│ \x1b[90mFreq: {}-{} MHz\x1b[0m                                           │", 
         cpu_min_freq, cpu_max_freq);
-    println!("\x1b[1m└───────────────────────────────────────────────────────────┘\x0m");
+    println!("\x1b[1m└───────────────────────────────────────────────────────────┘\x1b[0m");
     
     let mem_bar = draw_bar(mem_pct, bar_w);
     let mem_color = if mem_pct > 90.0 { "\x1b[31m" } else if mem_pct > 70.0 { "\x1b[33m" } else { "\x1b[32m" };
