@@ -49,6 +49,10 @@ clone_and_build() {
     git fetch origin termux
     git reset --hard origin/termux
 
+    echo "  清理旧的编译缓存..."
+    rm -rf "$WORK_DIR/target"
+    rm -f "$WORK_DIR/Cargo.lock"
+
     echo "  编译中 (首次可能需要几分钟)..."
     cargo build --release --features termux 2>/dev/null || \
     cargo build --features termux
