@@ -518,7 +518,7 @@ impl Default for WifiInfo {
     fn default() -> Self {
         Self {
             connected: false,
-            ssid: "Not connected".to_string(),
+            ssid: "未连接".to_string(),
             bssid: "00:00:00:00:00:00".to_string(),
             ip: "0.0.0.0".to_string(),
             link_speed: 0,
@@ -620,9 +620,9 @@ fn render(monitor: &mut TermuxMonitor, width: usize) {
     let double_sep = "═".repeat(width.min(78));
     
     println!("\x1b[1;36m╔{}╗\x1b[0m", double_sep);
-    println!("\x1b[1;36m║\x1b[0m \x1b[1;33m◆ Termux System Monitor v5.0.0\x1b[0m");
-    println!("\x1b[1;36m║\x1b[0m \x1b[90m{}\x1b[0m | \x1b[35mUp: {}\x1b[0m | \x1b[33mLoad: {:.2}\x1b[0m | \x1b[32mTorch: {}\x1b[0m \x1b[36m║", 
-        hostname, format_uptime(uptime), load1, if torch_on { "ON" } else { "OFF" });
+    println!("\x1b[1;36m║\x1b[0m \x1b[1;33m◆ Termux 系统监控 v5.0.0\x1b[0m");
+    println!("\x1b[1;36m║\x1b[0m \x1b[90m{}\x1b[0m | \x1b[35m运行: {}\x1b[0m | \x1b[33m负载: {:.2}\x1b[0m | \x1b[32m手电: {}\x1b[0m \x1b[36m║", 
+        hostname, format_uptime(uptime), load1, if torch_on { "开" } else { "关" });
     println!("\x1b[1;36m╚{}╝\x1b[0m", double_sep);
     
     let bar_w = (width - 30).min(25);
@@ -632,10 +632,10 @@ fn render(monitor: &mut TermuxMonitor, width: usize) {
     let battery_bar = draw_bar(battery.level as f32, bar_w / 2);
     let temp_color = if cpu_temp > 50.0 { "\x1b[31m" } else if cpu_temp > 35.0 { "\x1b[33m" } else { "\x1b[32m" };
     
-    println!("\x1b[1m┌─ Battery & Power ────────────────────────────────────────────────────────────┐\x1b[0m");
-    println!("│ {} {} {:>3}% {}  │ Health: {} │", 
+    println!("\x1b[1m┌─ 电池与电量 ────────────────────────────────────────────────────────────┐\x1b[0m");
+    println!("│ {} {} {:>3}% {}  │ 健康状态: {} │", 
         battery_icon, battery_color, battery.level, "\x1b[0m", battery.health);
-    println!("│ \x1b[90mTemp: {}{:.1}°C\x1b[0m | Status: {} | Plugged: {} | Volt: {:.2}V | Current: {}mA │", 
+    println!("│ \x1b[90m温度: {}{:.1}°C\x1b[0m | 状态: {} | 充电: {} | 电压: {:.2}V | 电流: {}mA │", 
         temp_color, cpu_temp, battery.status, battery.plugged, battery.voltage / 1000.0, battery.current);
     println!("\x1b[1m└─────────────────────────────────────────────────────────────────────────────┘\x1b[0m");
     
@@ -644,25 +644,25 @@ fn render(monitor: &mut TermuxMonitor, width: usize) {
     
     println!("\x1b[1m┌─ CPU ({}) ───────────────────────────────────────────────┐\x1b[0m", 
         cpu_model.chars().take(25).collect::<String>());
-    println!("│ \x1b[33m⚡\x1b[0m Usage: {}{:>5.1}%{}  {} │ \x1b[36m{} cores\x1b[0m │", 
+    println!("│ \x1b[33m⚡\x1b[0m 使用率: {}{:>5.1}%{}  {} │ \x1b[36m{} 核\x1b[0m │", 
         cpu_color, cpu_avg, "\x1b[0m", cpu_bar, cpu_count);
-    println!("│ \x1b[90mFreq: {}-{} MHz\x1b[0m                                           │", 
+    println!("│ \x1b[90m频率: {}-{} MHz\x1b[0m                                           │", 
         cpu_min_freq, cpu_max_freq);
     println!("\x1b[1m└───────────────────────────────────────────────────────────┘\x1b[0m");
     
     let mem_bar = draw_bar(mem_pct, bar_w);
     let mem_color = if mem_pct > 90.0 { "\x1b[31m" } else if mem_pct > 70.0 { "\x1b[33m" } else { "\x1b[32m" };
     
-    println!("\x1b[1m┌─ Memory ({}/{}) ────────────────────────────────────────┐\x1b[0m", 
+    println!("\x1b[1m┌─ 内存 ({}/{}) ────────────────────────────────────────┐\x1b[0m", 
         format_bytes(mem_used), format_bytes(mem_total));
-    println!("│ \x1b[35m💾\x1b[0m RAM:  {}{:>5.1}%{}  {} │ \x1b[90mCached: {}\x1b[0m │", 
+    println!("│ \x1b[35m💾\x1b[0m 内存: {}{:>5.1}%{}  {} │ \x1b[90m缓存: {}\x1b[0m │", 
         mem_color, mem_pct, "\x1b[0m", mem_bar, format_bytes(meminfo.cached));
-    println!("│ \x1b[90mActive: {} | Inactive: {}\x1b[0m                        │", 
+    println!("│ \x1b[90m活跃: {} | 非活跃: {}\x1b[0m                        │", 
         format_bytes(meminfo.active), format_bytes(meminfo.inactive));
     if meminfo.swap_total > 0 {
         let swap_pct = meminfo.swap_used as f32 / meminfo.swap_total as f32 * 100.0;
         let swap_bar = draw_bar(swap_pct, bar_w / 2);
-        println!("│ \x1b[34m↔\x1b[0m Swap: {:>5.1}%  {} │ {}/{} │", 
+        println!("│ \x1b[34m↔\x1b[0m 交换区: {:>5.1}%  {} │ {}/{} │", 
             swap_pct, swap_bar, format_bytes(meminfo.swap_used), format_bytes(meminfo.swap_total));
     }
     println!("\x1b[1m└───────────────────────────────────────────────────────────┘\x1b[0m");
@@ -671,22 +671,22 @@ fn render(monitor: &mut TermuxMonitor, width: usize) {
     let storage_color = if storage_pct > 90.0 { "\x1b[31m" } else if storage_pct > 70.0 { "\x1b[33m" } else { "\x1b[32m" };
     let storage_used = storage_total.saturating_sub(storage_avail);
     
-    println!("\x1b[1m┌─ Storage (Internal) ──────────────────────────────────────┐\x1b[0m");
-    println!("│ \x1b[32m📦\x1b[0m Used: {}{:>5.1}%{}  {} │ {}/{} │", 
+    println!("\x1b[1m┌─ 存储 (内置) ──────────────────────────────────────┐\x1b[0m");
+    println!("│ \x1b[32m📦\x1b[0m 已用: {}{:>5.1}%{}  {} │ {}/{} │", 
         storage_color, storage_pct, "\x1b[0m", storage_bar, format_bytes(storage_used), format_bytes(storage_total));
     if ext_total > 0 {
         let ext_bar = draw_bar(ext_pct, bar_w / 2);
-        println!("│ \x1b[34m📁\x1b[0m External: {:>5.1}%  {} │ {}/{} │", 
+        println!("│ \x1b[34m📁\x1b[0m 外部: {:>5.1}%  {} │ {}/{} │", 
             ext_pct, ext_bar, format_bytes(ext_used), format_bytes(ext_total));
     }
-    println!("│ \x1b[90mInodes: {}/{} (max: {})\x1b[0m                              │", 
+    println!("│ \x1b[90mInode: {}/{} (最大: {})\x1b[0m                              │", 
         used_inodes, min_inodes, max_inodes);
     println!("\x1b[1m└───────────────────────────────────────────────────────────┘\x1b[0m");
     
-    println!("\x1b[1m┌─ Network ──────────────────────────────────────────────────┐\x1b[0m");
-    println!("│ \x1b[32m↓\x1b[0m RX: {:>10}/s  \x1b[31m↑\x1b[0m TX: {:>10}/s │", 
+    println!("\x1b[1m┌─ 网络 ──────────────────────────────────────────────────┐\x1b[0m");
+    println!("│ \x1b[32m↓\x1b[0m 下载: {:>10}/s  \x1b[31m↑\x1b[0m 上传: {:>10}/s │", 
         format_rate(net_rx), format_rate(net_tx));
-    println!("│ \x1b[90mTotal: ↓{} ↑{}\x1b[0m                                   │", 
+    println!("│ \x1b[90m总计: ↓{} ↑{}\x1b[0m                                   │", 
         format_bytes(data_usage.wifi_rx + data_usage.mobile_rx),
         format_bytes(data_usage.wifi_tx + data_usage.mobile_tx));
     if wifi.connected {
@@ -694,20 +694,20 @@ fn render(monitor: &mut TermuxMonitor, width: usize) {
             wifi.ssid, wifi.link_speed, wifi.signal_strength, wifi.frequency);
         println!("│ \x1b[90mIP: {} | BSSID: {}\x1b[0m                       │", wifi.ip, wifi.bssid);
     } else {
-        println!("│ \x1b[33m📶\x1b[0m WiFi: Not connected\x1b[0m                                 │");
+        println!("│ \x1b[33m📶\x1b[0m WiFi: 未连接\x1b[0m                                 │");
     }
     println!("\x1b[1m└───────────────────────────────────────────────────────────┘\x1b[0m");
     
     if !sensors.is_empty() {
-        println!("\x1b[1m┌─ Sensors ──────────────────────────────────────────────────┐\x1b[0m");
+        println!("\x1b[1m┌─ 传感器 ──────────────────────────────────────────────────┐\x1b[0m");
         for sensor in sensors.iter().take(3) {
             println!("│ \x1b[36m◉\x1b[0m {}                                               │", sensor.name.chars().take(50).collect::<String>());
         }
         println!("\x1b[1m└───────────────────────────────────────────────────────────┘\x1b[0m");
     }
     
-    println!("\x1b[1m┌─ Top Processes ────────────────────────────────────────────┐\x1b[0m");
-    println!("│ {:>6} │ {:<20} │ {:>6} │ {:>8} │", "PID", "Name", "CPU %", "Memory");
+    println!("\x1b[1m┌─ 进程排行 ────────────────────────────────────────────┐\x1b[0m");
+    println!("│ {:>6} │ {:<20} │ {:>6} │ {:>8} │", "PID", "名称", "CPU %", "内存");
     println!("│────────┼──────────────────────┼──────────┼──────────│");
     for (name, pid, cpu, mem) in processes.iter() {
         let name = if name.len() > 20 { format!("{}..", &name[..18]) } else { name.clone() };
@@ -719,7 +719,7 @@ fn render(monitor: &mut TermuxMonitor, width: usize) {
     
     let sep = "─".repeat(width.min(78));
     println!("\x1b[90m┌─ {} ─┐\x1b[0m", sep);
-    println!("\x1b[90m│ \x1b[33mCtrl+C\x1b[0m Exit  |  \x1b[33mCtrl+V\x1b[0m Vibrate  |  \x1b[33mCtrl+T\x1b[0m Torch  |  \x1b[33mCtrl+L\x1b[0m Load  \x1b[90m│\x1b[0m");
+    println!("\x1b[90m│ \x1b[33mCtrl+C\x1b[0m 退出  |  \x1b[33mCtrl+V\x1b[0m 震动  |  \x1b[33mCtrl+T\x1b[0m 手电  |  \x1b[33mCtrl+L\x1b[0m 负载  \x1b[90m│\x1b[0m");
     println!("\x1b[90m└───────────────────────────────────────────────────────────┘\x1b[0m");
     
     io::stdout().flush().unwrap();
@@ -730,11 +730,11 @@ fn format_uptime(seconds: i64) -> String {
     let hours = (seconds % 86400) / 3600;
     let mins = (seconds % 3600) / 60;
     if days > 0 {
-        format!("{}d {}h {}m", days, hours, mins)
+        format!("{}天 {}小时 {}分", days, hours, mins)
     } else if hours > 0 {
-        format!("{}h {}m", hours, mins)
+        format!("{}小时 {}分", hours, mins)
     } else {
-        format!("{}m", mins)
+        format!("{}分", mins)
     }
 }
 
@@ -747,15 +747,15 @@ fn main() {
     
     println!("\x1b[2J\x1b[H");
     println!("\x1b[1;32m╔═══════════════════════════════════════════╗\x1b[0m");
-    println!("\x1b[1;32m║\x1b[0m     \x1b[1;33mTermux System Monitor v5.0.0\x1b[0m      \x1b[1;32m║\x1b[0m");
-    println!("\x1b[1;32m║\x1b[0m     \x1b[36m50 Mobile-Optimized Features\x1b[0m       \x1b[1;32m║\x1b[0m");
+    println!("\x1b[1;32m║\x1b[0m     \x1b[1;33mTermux 系统监控 v5.0.0\x1b[0m      \x1b[1;32m║\x1b[0m");
+    println!("\x1b[1;32m║\x1b[0m     \x1b[36m50个手机优化功能\x1b[0m       \x1b[1;32m║\x1b[0m");
     println!("\x1b[1;32m╚═══════════════════════════════════════════╝\x1b[0m");
-    println!("\x1b[90mCollecting initial data...\x1b[0m");
+    println!("\x1b[90m正在收集初始数据...\x1b[0m");
     
     let termux_available = Command::new("termux-battery-status").output().is_ok();
     if !termux_available {
-        println!("\x1b[33mWarning: Termux API not found. Some features may be unavailable.\x1b[0m");
-        println!("\x1b[90mInstall termux-api package for full functionality.\x1b[0m");
+        println!("\x1b[33m警告: 未找到Termux API。部分功能可能不可用。\x1b[0m");
+        println!("\x1b[90m安装termux-api包以获得完整功能。\x1b[0m");
     }
     
     thread::sleep(Duration::from_millis(500));
@@ -780,7 +780,7 @@ fn main() {
                 'l' | 'L' => {
                     let (load1, load5, load15) = monitor.get_load_average();
                     println!("\x1b[2J\x1b[H");
-                    println!("\x1b[32mLoad Average: {:.2} (1m) {:.2} (5m) {:.2} (15m)\x1b[0m", load1, load5, load15);
+                    println!("\x1b[32m负载平均值: {:.2} (1分) {:.2} (5分) {:.2} (15分)\x1b[0m", load1, load5, load15);
                     thread::sleep(Duration::from_secs(2));
                 }
                 'q' | 'Q' => break,
@@ -793,6 +793,6 @@ fn main() {
     
     println!("\x1b[2J\x1b[H");
     println!("\x1b[32m╔═══════════════════════════════════╗\x1b[0m");
-    println!("\x1b[32m║\x1b[0m  Thank you for using Termux Monitor!  \x1b[32m║\x1b[0m");
+    println!("\x1b[32m║\x1b[0m  感谢使用Termux系统监控！  \x1b[32m║\x1b[0m");
     println!("\x1b[32m╚═══════════════════════════════════╝\x1b[0m\n");
 }
