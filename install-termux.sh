@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # Termux System Monitor v5.0.0 - 50 Mobile Features
-# 简化版一键安装脚本
+# 预编译二进制文件一键安装脚本
 
 set -e
 
 VERSION="5.0.0"
 BINARY_NAME="termux-monitor"
+GITHUB_REPO="2233qazwsx0/linux-sys-monitor"
+RELEASE_TAG="v${VERSION}"
 
 echo "========================================"
 echo "  📱 Termux System Monitor v${VERSION}"
@@ -16,9 +18,9 @@ echo ""
 check_dependencies() {
     echo "[1/4] 检查依赖..."
 
-    if ! command -v cargo &> /dev/null; then
-        echo "  安装 Rust 工具链..."
-        pkg update && pkg install -y rust
+    if ! command -v curl &> /dev/null; then
+        echo "  安装 curl..."
+        pkg update && pkg install -y curl
     fi
 
     if ! command -v termux-battery-status &> /dev/null; then
@@ -26,43 +28,32 @@ check_dependencies() {
         pkg update && pkg install -y termux-api
     fi
 
-    if ! command -v git &> /dev/null; then
-        echo "  安装 Git..."
-        pkg update && pkg install -y git
-    fi
-
     echo "  依赖检查完成 ✓"
 }
 
-clone_and_build() {
-    echo "[2/4] 构建程序..."
+download_binary() {
+    echo "[2/4] 下载预编译二进制文件..."
 
-    WORK_DIR="$HOME/linux-sys-monitor-build"
+    BINARY_URL="https://github.com/${GITHUB_REPO}/releases/download/${RELEASE_TAG}/${BINARY_NAME}"
+    TEMP_DIR=$(mktemp -d)
 
-    if [ ! -d "$WORK_DIR/.git" ]; then
-        echo "  克隆源码仓库 (termux 分支)..."
-        rm -rf "$WORK_DIR"
-        git clone -b termux --depth 1 https://github.com/2233qazwsx0/linux-sys-monitor.git "$WORK_DIR"
+    echo "  从 ${BINARY_URL} 下载..."
+
+    if curl -L -o "$TEMP_DIR/$BINARY_NAME" "$BINARY_URL"; then
+        chmod +x "$TEMP_DIR/$BINARY_NAME"
+        echo "  下载完成 ✓"
+    else
+        echo "  从release下载失败，尝试直接从仓库下载..."
+        RAW_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/termux/release/${BINARY_NAME}"
+        curl -L -o "$TEMP_DIR/$BINARY_NAME" "$RAW_URL"
+        chmod +x "$TEMP_DIR/$BINARY_NAME"
     fi
 
-    cd "$WORK_DIR"
-    git fetch origin termux
-    git reset --hard origin/termux
-
-    echo "  清理旧的编译缓存..."
-    rm -rf "$WORK_DIR/target"
-    rm -f "$WORK_DIR/Cargo.lock"
-
-    echo "  编译中 (首次可能需要几分钟)..."
-    cargo build --release --features termux 2>/dev/null || \
-    cargo build --features termux
-
     mkdir -p "$PREFIX/bin"
-    cp target/*/release/$BINARY_NAME "$PREFIX/bin/" 2>/dev/null || \
-    cp target/release/$BINARY_NAME "$PREFIX/bin/"
-    chmod +x "$PREFIX/bin/$BINARY_NAME"
+    cp "$TEMP_DIR/$BINARY_NAME" "$PREFIX/bin/"
+    rm -rf "$TEMP_DIR"
 
-    echo "  构建完成 ✓"
+    echo "  安装完成 ✓"
 }
 
 show_features() {
@@ -97,6 +88,6 @@ run_monitor() {
 }
 
 check_dependencies
-clone_and_build
+download_binary
 show_features
 run_monitor
