@@ -6,24 +6,27 @@ description = "Ultra-lightweight real-time system monitoring"
 license = "MIT"
 
 [features]
-default = ["web"]
-web = ["dep:axum", "dep:tower-http", "dep:tokio", "dep:tracing-subscriber", "dep:serde_json", "dep:reqwest", "dep:csv", "dep:zip", "dep:flate2", "dep:regex", "dep:tokio-cron-scheduler", "dep:base64", "dep:tracing"]
+default = []
+web = ["dep:axum", "dep:tower-http", "dep:tokio", "dep:tracing-subscriber", "dep:serde_json", "dep:reqwest", "dep:csv", "dep:zip", "dep:flate2", "dep:regex", "dep:tokio-cron-scheduler", "dep:base64", "dep:tracing", "dep:chrono"]
 cli = ["dep:ctrlc", "dep:terminal_size"]
 termux = ["dep:ctrlc", "dep:terminal_size"]
 
 [dependencies]
-tokio = { version = "1.35", features = ["rt-multi-thread", "time", "sync", "macros"], optional = true }
-axum = { version = "0.7", features = ["ws"], optional = true }
-tower-http = { version = "0.5", features = ["cors"], optional = true }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = { version = "1.0", optional = true }
+# 所有Termux和CLI需要的最小依赖
+serde = { version = "1.0", features = ["derive"], optional = true }
 sysinfo = { version = "0.30", default-features = false, features = ["serde"] }
-chrono = { version = "0.4", default-features = false, features = ["serde", "clock"], optional = true }
-tracing = { version = "0.1", optional = true }
-tracing-subscriber = { version = "0.3", features = ["env-filter"], optional = true }
 futures-util = "0.3"
 ctrlc = { version = "3.2", optional = true }
 terminal_size = { version = "0.3", optional = true }
+
+# Web版本才需要的依赖（optional）
+tokio = { version = "1.35", features = ["rt-multi-thread", "time", "sync", "macros"], optional = true }
+axum = { version = "0.7", features = ["ws"], optional = true }
+tower-http = { version = "0.5", features = ["cors"], optional = true }
+serde_json = { version = "1.0", optional = true }
+chrono = { version = "0.4", default-features = false, features = ["serde", "clock"], optional = true }
+tracing = { version = "0.1", optional = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter"], optional = true }
 
 csv = { version = "1.3", optional = true }
 zip = { version = "0.6", optional = true }
