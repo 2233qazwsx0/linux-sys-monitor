@@ -7,13 +7,14 @@ license = "MIT"
 
 [features]
 default = []
-web = ["dep:axum", "dep:tower-http", "dep:tokio", "dep:tracing-subscriber", "dep:serde_json", "dep:reqwest", "dep:csv", "dep:zip", "dep:flate2", "dep:regex", "dep:tokio-cron-scheduler", "dep:base64", "dep:tracing", "dep:chrono"]
-cli = ["dep:ctrlc", "dep:terminal_size"]
-termux = ["dep:ctrlc", "dep:terminal_size"]
+web = ["dep:axum", "dep:tower-http", "dep:tokio", "dep:tracing-subscriber", "dep:reqwest", "dep:csv", "dep:zip", "dep:flate2", "dep:regex", "dep:tokio-cron-scheduler", "dep:base64", "dep:tracing", "dep:chrono"]
+cli = ["dep:ctrlc", "dep:terminal_size", "dep:serde", "dep:serde_json"]
+termux = ["dep:ctrlc", "dep:terminal_size", "dep:serde", "dep:serde_json"]
 
 [dependencies]
 # 所有Termux和CLI需要的最小依赖
 serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
 sysinfo = { version = "0.30", default-features = false, features = ["serde"] }
 futures-util = "0.3"
 ctrlc = { version = "3.2", optional = true }
