@@ -222,22 +222,15 @@ impl TermuxMonitor {
         if let Ok(content) = fs::read_to_string("/proc/cpuinfo") {
             let mut model = String::new();
             let mut hardware = String::new();
-            let mut features = String::new();
             for line in content.lines() {
                 if line.starts_with("model name") || line.starts_with("Processor") {
                     if let Some(val) = line.split(':').nth(1) {
                         model = val.trim().to_string();
-                        break;
                     }
                 }
                 if line.starts_with("Hardware") {
                     if let Some(val) = line.split(':').nth(1) {
                         hardware = val.trim().to_string();
-                    }
-                }
-                if line.starts_with("Features") || line.starts_with("flags") {
-                    if let Some(val) = line.split(':').nth(1) {
-                        features = val.trim().to_string();
                     }
                 }
             }
@@ -248,11 +241,23 @@ impl TermuxMonitor {
                 return hardware;
             }
         }
-        "Unknown ARM Processor".to_string()
+        "ARM处理器".to_string()
     }
 
     fn get_cpu_cores(&self) -> usize {
-        self.system.cpus().len()
+        let mut count = 0;
+        if let Ok(content) = fs::read_to_string("/proc/cpuinfo") {
+            for line in content.lines() {
+                if line.starts_with("processor") {
+                    count += 1;
+                }
+            }
+        }
+        if count == 0 {
+            self.system.cpus().len()
+        } else {
+            count
+        }
     }
 
     fn get_cpu_frequency(&self) -> (u64, u64) {
@@ -350,12 +355,12 @@ impl TermuxMonitor {
                 let json_str = String::from_utf8_lossy(&output.stdout);
                 if let Ok(data) = serde_json::from_str::<serde_json::Value>(&json_str) {
                     info.connected = true;
-                    info.ssid = data["SSID"].as_str().unwrap_or("Unknown").to_string();
-                    info.bssid = data["BSSID"].as_str().unwrap_or("Unknown").to_string();
-                    info.ip = data["IP"].as_str().unwrap_or("Unknown").to_string();
-                    info.link_speed = data["link_speed"].as_i64().unwrap_or(0) as u32;
-                    info.signal_strength = data["rssi"].as_i64().unwrap_or(0) as i32;
-                    info.frequency = data["frequency"].as_i64().unwrap_or(0) as u32;
+                    info.ssid = data["SSID"].as_str().or_else(|| data["ssid"].as_str()).unwrap_or("未知").to_string();
+                    info.bssid = data["BSSID"].as_str().or_else(|| data["bssid"].as_str()).unwrap_or("未知").to_string();
+                    info.ip = data["IP"].as_str().or_else(|| data["ip"].as_str()).unwrap_or("未知").to_string();
+                    info.link_speed = data["link_speed"].as_i64().or_else(|| data["linkSpeed"].as_i64()).unwrap_or(0) as u32;
+                    info.signal_strength = data["rssi"].as_i64().or_else(|| data["signalStrength"].as_i64()).unwrap_or(0) as i32;
+                    info.frequency = data["frequency"].as_i64().or_else(|| data["freq"].as_i64()).unwrap_or(0) as u32;
                 }
             }
         }
@@ -519,8 +524,8 @@ impl Default for WifiInfo {
         Self {
             connected: false,
             ssid: "未连接".to_string(),
-            bssid: "00:00:00:00:00:00".to_string(),
-            ip: "0.0.0.0".to_string(),
+            bssid: "未知".to_string(),
+            ip: "未知".to_string(),
             link_speed: 0,
             signal_strength: 0,
             frequency: 0,
@@ -589,13 +594,13 @@ fn toggle_torch() {
 fn render(monitor: &mut TermuxMonitor, width: usize) {
     monitor.refresh();
     
-    let (cpu_avg, cpu_count) = monitor.get_cpu_usage();
-    let (mem_total, mem_used, _mem_avail) = monitor.get_memory();
+    let (cpu_avg, _) = monitor.get_cpu_usage();
+    let cpu_count = monitor.get_cpu_cores();
+    let meminfo = monitor.get_proc_meminfo();
     let battery = monitor.get_battery_info();
     let cpu_temp = monitor.get_cpu_temp();
     let (storage_total, storage_avail) = monitor.get_storage_info();
     let (ext_total, ext_used) = monitor.get_external_storage();
-    let meminfo = monitor.get_proc_meminfo();
     let cpu_model = monitor.get_cpu_info();
     let hostname = monitor.get_hostname();
     let uptime = monitor.get_uptime();
@@ -606,10 +611,10 @@ fn render(monitor: &mut TermuxMonitor, width: usize) {
     let (cpu_min_freq, cpu_max_freq) = monitor.get_cpu_frequency();
     let sensors = monitor.get_sensors();
     let torch_on = monitor.get_torch_status();
-    let (load1, load5, load15) = monitor.get_load_average();
+    let (load1, _, _) = monitor.get_load_average();
     let (min_inodes, used_inodes, max_inodes) = monitor.get_inodes();
     
-    let mem_pct = if mem_total > 0 { mem_used as f32 / mem_total as f32 * 100.0 } else { 0.0 };
+    let mem_pct = if meminfo.total > 0 { meminfo.used as f32 / meminfo.total as f32 * 100.0 } else { 0.0 };
     let storage_pct = if storage_total > 0 { 
         (storage_total - storage_avail) as f32 / storage_total as f32 * 100.0 
     } else { 0.0 };
@@ -629,7 +634,6 @@ fn render(monitor: &mut TermuxMonitor, width: usize) {
     
     let battery_icon = if battery.level > 80 { "⚡" } else if battery.level > 20 { "🔋" } else { "🪫" };
     let battery_color = if battery.level > 50 { "\x1b[32m" } else if battery.level > 20 { "\x1b[33m" } else { "\x1b[31m" };
-    let battery_bar = draw_bar(battery.level as f32, bar_w / 2);
     let temp_color = if cpu_temp > 50.0 { "\x1b[31m" } else if cpu_temp > 35.0 { "\x1b[33m" } else { "\x1b[32m" };
     
     println!("\x1b[1m┌─ 电池与电量 ────────────────────────────────────────────────────────────┐\x1b[0m");
@@ -654,7 +658,7 @@ fn render(monitor: &mut TermuxMonitor, width: usize) {
     let mem_color = if mem_pct > 90.0 { "\x1b[31m" } else if mem_pct > 70.0 { "\x1b[33m" } else { "\x1b[32m" };
     
     println!("\x1b[1m┌─ 内存 ({}/{}) ────────────────────────────────────────┐\x1b[0m", 
-        format_bytes(mem_used), format_bytes(mem_total));
+        format_bytes(meminfo.used), format_bytes(meminfo.total));
     println!("│ \x1b[35m💾\x1b[0m 内存: {}{:>5.1}%{}  {} │ \x1b[90m缓存: {}\x1b[0m │", 
         mem_color, mem_pct, "\x1b[0m", mem_bar, format_bytes(meminfo.cached));
     println!("│ \x1b[90m活跃: {} | 非活跃: {}\x1b[0m                        │", 
